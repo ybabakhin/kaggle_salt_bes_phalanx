@@ -13,8 +13,8 @@ class DataGenerator:
 
         
     def _read_image_train(self, id):
-        img = read_image('train/images/{}.png'.format(id), self.input_size, self.preprocess)
-        mask = read_mask('train/masks/{}.png'.format(id), self.input_size)
+        img = read_image('/home/p/babakhin/Branding/salt/train/images/{}.png'.format(id), self.input_shape, self.preprocess)
+        mask = read_mask('/home/p/babakhin/Branding/salt/train/masks/{}.png'.format(id), self.input_shape)
         if self.augs:
             data = {"image": img, "mask": mask}
             augmented = self.augs(**data)
@@ -26,8 +26,8 @@ class DataGenerator:
 
 
     def _read_image_valid(self, id):
-        img = read_image('train/images/{}.png'.format(id), self.input_size, self.preprocess)
-        mask = read_mask('train/masks/{}.png'.format(id), self.input_size)
+        img = read_image('/home/p/babakhin/Branding/salt/train/images/{}.png'.format(id), self.input_shape, self.preprocess)
+        mask = read_mask('/home/p/babakhin/Branding/salt/train/masks/{}.png'.format(id), self.input_shape)
 
         return (img, mask)
 
