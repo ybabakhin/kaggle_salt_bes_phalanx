@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 from utils import read_image, read_mask
-
-
+from params import args
+import os
 
 class DataGenerator:
     def __init__(self, input_shape=(128,128), batch_size=32, preprocess=None, augs=None):
@@ -10,24 +10,36 @@ class DataGenerator:
         self.batch_size = batch_size
         self.preprocess = preprocess
         self.augs = augs
-
         
     def _read_image_train(self, id):
-        img = read_image('/home/p/babakhin/Branding/salt/train/images/{}.png'.format(id), self.input_shape, self.preprocess)
-        mask = read_mask('/home/p/babakhin/Branding/salt/train/masks/{}.png'.format(id), self.input_shape)
+        img = read_image(os.path.join(args.images_dir,'{}.png'.format(id)), self.input_shape)
+        mask = read_mask(os.path.join(args.masks_dir,'{}.png'.format(id)), self.input_shape)
+        
         if self.augs:
             data = {"image": img, "mask": mask}
             augmented = self.augs(**data)
             img, mask = augmented["image"], augmented["mask"]
-            if len(mask.shape) < 3:
-                mask = np.expand_dims(mask, axis=2)
             
+        img = np.array(img, np.float32)
+        img = self.preprocess(img)
+        
+        mask = np.array(mask / 255., np.float32)
+        if len(mask.shape) < 3:
+            mask = np.expand_dims(mask, axis=2)
+        
         return (img, mask)
 
 
     def _read_image_valid(self, id):
-        img = read_image('/home/p/babakhin/Branding/salt/train/images/{}.png'.format(id), self.input_shape, self.preprocess)
-        mask = read_mask('/home/p/babakhin/Branding/salt/train/masks/{}.png'.format(id), self.input_shape)
+        img = read_image(os.path.join(args.images_dir,'{}.png'.format(id)), self.input_shape)
+        mask = read_mask(os.path.join(args.masks_dir,'{}.png'.format(id)), self.input_shape)
+        
+        img = np.array(img, np.float32)
+        img = self.preprocess(img)
+        
+        mask = np.array(mask / 255., np.float32)
+        if len(mask.shape) < 3:
+            mask = np.expand_dims(mask, axis=2)
 
         return (img, mask)
 

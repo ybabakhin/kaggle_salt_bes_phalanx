@@ -22,23 +22,33 @@ from callbacks import *
 from augmentations import *
 
 import threading
+from params import args
 
-def read_image(path, input_size, preprocess):
+
+
+from albumentations import PadIfNeeded, CenterCrop
+
+def read_image(path, input_size):
     img = cv2.imread(path, cv2.IMREAD_COLOR)
-    img = cv2.resize(img, input_size)
-    img = np.array(img, np.float32)
-    img = preprocess(img)
+    
+    augmentation = PadIfNeeded(min_height=input_size[0], min_width=input_size[1], p=1.0)
+    data = {"image": img}
+    img = augmentation(**data)["image"]
+    
+    # img = cv2.resize(img, input_size)
+    
     return img
-    
-    
     
 def read_mask(path, input_size):
     mask = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    mask = cv2.resize(mask, input_size)
-    mask = np.array(mask / 255., np.float32)
-    mask = np.expand_dims(mask, axis=2)
-    return mask
-                
+    
+    augmentation = PadIfNeeded(min_height=input_size[0], min_width=input_size[1], p=1.0)
+    data = {"image": mask}
+    mask = augmentation(**data)["image"]
+    
+    # mask = cv2.resize(mask, input_size)
+    
+    return mask  
 
 class ThreadsafeIter(object):
     def __init__(self, it):
@@ -57,9 +67,7 @@ def poolcontext(*args, **kwargs):
     yield pool
     pool.terminate()
 
-INPUT_SIZE = (128,128)
-INITIAL_IMG_SIZE = 101
-
+    
 def get_model(weights_path, model_name):
     if model_name == 'unet_128':
         input_size = (128,128,1)
@@ -170,15 +178,29 @@ def get_model(weights_path, model_name):
         from keras.applications.resnet50 import preprocess_input
         
         def preprocess(img):
-            return preprocess_input(img)    
+            return preprocess_input(img)
+        
+    elif model_name == 'resnet50_fpn':
+        
+        model = unets.resnet50_fpn((args.input_size, args.input_size, 3), channels=1, activation="sigmoid")
 
-    # Add cumsum channel. And depth channel?   
-    # Preprocess input if you're using pretrained models
+        model.compile(optimizer=RMSprop(lr=args.learning_rate), loss=make_loss(args.loss_function),
+                      metrics=[dice_coef, jacard_coef])
+
+        augs = get_augmentations(args.augmentation_name, p=args.augmentation_prob)
+
+        #callbacks = get_callback('early_stopping', weights_path=weights_path, early_stop_patience=5)
+        callbacks = get_callback(args.callback, weights_path=weights_path, early_stop_patience=args.early_stop_patience, reduce_lr_factor=args.reduce_lr_factor, reduce_lr_patience=args.reduce_lr_patience, reduce_lr_min=args.reduce_lr_min)
+        
+        from keras.applications.resnet50 import preprocess_input
+        
+        def preprocess(img):
+            return preprocess_input(img) 
 
     else:
         ValueError("Unknown Model")
 
-    return model, callbacks, input_size, augs, preprocess
+    return model, callbacks, augs, preprocess
 
 
 # Cumsum channel
@@ -211,21 +233,26 @@ def noise_cv():
 
 def read_image_test(id, TTA, oof, preprocess):
     if oof:
-        img = read_image(os.path.join('/home/p/babakhin/Branding/salt/train/images/{}.png'.format(id)), INPUT_SIZE, preprocess)
+        img = read_image(os.path.join(args.images_dir,'{}.png'.format(id)), (args.input_size,args.input_size))
     else:
-        img = read_image(os.path.join('/home/p/babakhin/Branding/salt/test/images/{}.png'.format(id)), INPUT_SIZE, preprocess)
+        img = read_image(os.path.join(args.test_folder,'{}.png'.format(id)), (args.input_size,args.input_size))
     
-    imgs = [img]
+    imgs = []
 
     if TTA == '':
-        pass
+        img = np.array(img, np.float32)
+        img = preprocess(img)
+        imgs.append(img)
 
     elif TTA == 'flip':
         augmentation = HorizontalFlip(p=1)
         data = {'image': img}
         img2 = augmentation(**data)['image']
-        img2 = np.expand_dims(img2, axis=2)
-        imgs.append(img2)
+        
+        for im in [img,img2]:
+            im = np.array(im, np.float32)
+            im = preprocess(im)
+            imgs.append(im)
 
     elif TTA == 'D4':
         pass
@@ -319,8 +346,13 @@ def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', prepr
             for idx in range(end - start):
                 part = []
                 for aug in range(augment_number_per_image):
-
-                    prob = cv2.resize(preds[total], (INITIAL_IMG_SIZE, INITIAL_IMG_SIZE))
+                    
+                    # prob = cv2.resize(preds[total], (args.initial_size,args.initial_size))
+                    
+                    augmentation = CenterCrop(height = args.initial_size, width = args.initial_size, p = 1.0)
+                    data = {"image": preds[total]}
+                    prob = augmentation(**data)["image"]
+                    
                     if aug == 0:
                         pass
                     elif aug == 1:
@@ -348,7 +380,7 @@ def ensemble(model_dirs, folds, ids, thr):
                 path = os.path.join(d, 'fold_{}'.format(fold))
                 mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
                 
-                img = cv2.imread(os.path.join('/home/p/babakhin/Branding/salt/test/images/', '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
+                img = cv2.imread(os.path.join(args.test_folder, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
                 if np.unique(img).shape[0] == 1:
                     pred_folds.append(np.zeros(mask.shape))
                 else:
@@ -373,7 +405,7 @@ def evaluate(model_dirs, ids, thr):
             path = os.path.join(d, 'oof')
             mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
             
-            img = cv2.imread(os.path.join('/home/p/babakhin/Branding/salt/train/images/', '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
+            img = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
             if np.unique(img).shape[0] == 1:
                 preds.append(np.zeros(mask.shape))
             else:
@@ -384,7 +416,7 @@ def evaluate(model_dirs, ids, thr):
         # final_pred = scipy.stats.mstats.gmean(np.array(preds), axis=0)
         final_pred = np.mean(np.array(preds), axis=0)
 
-        true_mask = cv2.imread(os.path.join('/home/p/babakhin/Branding/salt/train/masks/', '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
+        true_mask = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
         true_mask = np.array(true_mask / 255, np.float32)
         
         # https://docs.opencv.org/3.1.0/d4/d13/tutorial_py_filtering.html
