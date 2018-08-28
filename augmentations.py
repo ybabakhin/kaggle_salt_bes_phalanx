@@ -2,11 +2,10 @@ from albumentations import (VerticalFlip,
                             HorizontalFlip, IAAPerspective, ShiftScaleRotate, CLAHE, RandomRotate90,
                             Transpose, ShiftScaleRotate, Blur, OpticalDistortion, GridDistortion, HueSaturationValue,
                             IAAAdditiveGaussianNoise, GaussNoise, MotionBlur, MedianBlur, IAAPiecewiseAffine,
-                            IAASharpen, IAAEmboss, RandomContrast, RandomBrightness, Flip, OneOf, Compose, ElasticTransform
+                            IAASharpen, IAAEmboss, RandomContrast, RandomBrightness, Flip, OneOf, Compose, ElasticTransform, RandomCrop
                             )
 
-
-def get_augmentations(augmentation, p=0.5):
+def get_augmentations(augmentation, p, input_shape):
     if augmentation == 'initial':
         augmentations = Compose([
                 RandomRotate90(),
@@ -14,32 +13,88 @@ def get_augmentations(augmentation, p=0.5):
                 Transpose()
             ], p=p)
         
-    elif augmentation == 'all':
+    if augmentation == 'initial_crops':
+        augmentations = Compose([
+                RandomRotate90(0.9),
+                Flip(0.9),
+                Transpose(0.9),
+                RandomCrop(height=input_shape[0], width=input_shape[1])
+            ], p=p)
+        
+    elif augmentation == 'valid':
+        augmentations = Compose([
+                HorizontalFlip(p=.5),
+                RandomBrightness(p=.2),
+                ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.4, rotate_limit=0, p=.7)
+            ], p=p)
+    # Distortion?    
+    elif augmentation == 'valid_plus':
+        augmentations = Compose([
+            #RandomRotate90(p=1),
+                HorizontalFlip(p=.5),
+                RandomBrightness(p=.2,limit=0.2),
+                RandomContrast(p=.1,limit=0.2),
+                ShiftScaleRotate(shift_limit=0.1625, scale_limit=0.6, rotate_limit=0, p=0.7),
+            OpticalDistortion(distort_limit=0.05, shift_limit=0.05, interpolation=1, border_mode=4, p=0.2)
+            ], p=p)
+
+
+# OpticalDistortion(distort_limit=0.05, shift_limit=0.05, interpolation=1, border_mode=4, p=0.5)
+
+# OneOf([
+#             OpticalDistortion(p=0.3),
+#             GridDistortion(p=0.1),
+#             IAAPiecewiseAffine(p=0.3),
+#         ], p=0.2),
+
+# Try strong_aug
+
+# TRY AGAIN:
+# GaussNoise
+
+# NO:
+# VerticalFlip(p=.5),
+# Transpose(0.5),
+# Blur
+        
+    elif augmentation == 'horizontal_flip':
+        augmentations = Compose([
+                HorizontalFlip()
+            ], p=p)
+        
+    elif augmentation == 'strong_aug':
         
         augmentations =  Compose([
-                #a CLAHE(clip_limit=2, p=0.35),
-                #c GaussNoise(),
-                #ToGray(prob=0.25),
-                #InvertImg(prob=0.2),
-                #Remap(p=0.4),
-                RandomRotate90(),
-                Flip(),
-                Transpose(),
-                #c Blur(blur_limit=3, p=.4),
-                #a RandomContrast(p=.2),
-                #c RandomBrightness(p=.2),
-                #b ElasticTransform(p=0.3),
-                #Distort1(p=0.3),
-                #Distort2(p=.1),
-                #b ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.4, rotate_limit=45, p=.7),
-                #a HueSaturationValue(),
-                #ChannelShuffle(prob=.2),
-                #FixMasks(1.)
-        ], p=p)
+        #RandomRotate90(),
+        HorizontalFlip(p=0.5),
+        #Transpose(),
+        OneOf([
+            IAAAdditiveGaussianNoise(),
+            GaussNoise(),
+        ], p=0.2),
+        OneOf([
+            MotionBlur(p=0.2),
+            MedianBlur(blur_limit=3, p=0.1),
+            Blur(blur_limit=3, p=0.1),
+        ], p=0.2),
+        ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=0, p=0.2),
+        OneOf([
+            OpticalDistortion(p=0.3),
+            GridDistortion(p=0.1),
+            IAAPiecewiseAffine(p=0.3),
+        ], p=0.2),
+        OneOf([
+            IAASharpen(),
+            IAAEmboss(),
+            RandomContrast(),
+            RandomBrightness(),
+        ], p=0.3),
+    ], p=p)
 
     else:
         ValueError("Unknown Augmentations")
 
 
     return augmentations
+
 

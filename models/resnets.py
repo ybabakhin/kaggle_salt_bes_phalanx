@@ -115,7 +115,7 @@ def ResNet18(inputs, blocks=None, include_top=True, classes=1000, *args, **kwarg
     if blocks is None:
         blocks = [2, 2, 2, 2]
 
-    return ResNet(inputs, blocks, block=keras_resnet.blocks.basic_2d, include_top=include_top, classes=classes, *args, **kwargs)
+    return ResNet(inputs, blocks, block=basic_2d, include_top=include_top, classes=classes, *args, **kwargs)
 
 
 def ResNet34(inputs, blocks=None, include_top=True, classes=1000, *args, **kwargs):
@@ -147,7 +147,7 @@ def ResNet34(inputs, blocks=None, include_top=True, classes=1000, *args, **kwarg
     if blocks is None:
         blocks = [3, 4, 6, 3]
 
-    return ResNet(inputs, blocks, block=keras_resnet.blocks.basic_2d, include_top=include_top, classes=classes, *args, **kwargs)
+    return ResNet(inputs, blocks, block=basic_2d, include_top=include_top, classes=classes, *args, **kwargs)
 
 
 def ResNet50(inputs, blocks=None, include_top=True, classes=1000, *args, **kwargs):

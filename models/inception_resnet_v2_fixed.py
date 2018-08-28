@@ -3,21 +3,19 @@
 
 Model naming and structure follows TF-slim implementation (which has some additional
 layers and different number of filters from the original arXiv paper):
-https://github.com/tensorflow/models/blob/master/research/slim/nets/inception_resnet_v2.py
+https://github.com/tensorflow/models/blob/master/slim/nets/inception_resnet_v2.py
 
 Pre-trained ImageNet weights are also converted from TF-slim, which can be found in:
-https://github.com/tensorflow/models/tree/master/research/slim#pre-trained-models
+https://github.com/tensorflow/models/tree/master/slim#pre-trained-models
 
 # Reference
 - [Inception-v4, Inception-ResNet and the Impact of
    Residual Connections on Learning](https://arxiv.org/abs/1602.07261)
 
 """
-from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
+from __future__ import absolute_import
 
-import os
 import warnings
 
 from keras.applications import imagenet_utils
@@ -68,10 +66,9 @@ def conv2d_bn(x,
         x: input tensor.
         filters: filters in `Conv2D`.
         kernel_size: kernel size as in `Conv2D`.
-        strides: strides in `Conv2D`.
         padding: padding mode in `Conv2D`.
         activation: activation in `Conv2D`.
-        use_bias: whether to use a bias in `Conv2D`.
+        strides: strides in `Conv2D`.
         name: name of the ops; will become `name + '_ac'` for the activation
             and `name + '_bn'` for the batch norm layer.
 
@@ -173,7 +170,7 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
     return x
 
 
-def InceptionResNetV2Same(include_top=True,
+def InceptionResNetV2(include_top=True,
                       weights='imagenet',
                       input_tensor=None,
                       input_shape=None,
@@ -186,8 +183,8 @@ def InceptionResNetV2Same(include_top=True,
     set `"image_data_format": "channels_last"` in your Keras config
     at `~/.keras/keras.json`.
 
-    The model and the weights are compatible with TensorFlow, Theano and
-    CNTK backends. The data format convention used by the model is
+    The model and the weights are compatible with both TensorFlow and Theano
+    backends (but not CNTK). The data format convention used by the model is
     the one specified in your Keras config file.
 
     Note that the default input image size for this model is 299x299, instead
@@ -198,9 +195,8 @@ def InceptionResNetV2Same(include_top=True,
     # Arguments
         include_top: whether to include the fully-connected
             layer at the top of the network.
-        weights: one of `None` (random initialization),
-              'imagenet' (pre-training on ImageNet),
-              or the path to the weights file to be loaded.
+        weights: one of `None` (random initialization)
+            or `'imagenet'` (pre-training on ImageNet).
         input_tensor: optional Keras tensor (i.e. output of `layers.Input()`)
             to use as image input for the model.
         input_shape: optional shape tuple, only to be specified
@@ -229,12 +225,15 @@ def InceptionResNetV2Same(include_top=True,
     # Raises
         ValueError: in case of invalid argument for `weights`,
             or invalid input shape.
+        RuntimeError: If attempting to run this model with an unsupported backend.
     """
-    if not (weights in {'imagenet', None} or os.path.exists(weights)):
+    if K.backend() in {'cntk'}:
+        raise RuntimeError(K.backend() + ' backend is currently unsupported for this model.')
+
+    if weights not in {'imagenet', None}:
         raise ValueError('The `weights` argument should be either '
-                         '`None` (random initialization), `imagenet` '
-                         '(pre-training on ImageNet), '
-                         'or the path to the weights file to be loaded.')
+                         '`None` (random initialization) or `imagenet` '
+                         '(pre-training on ImageNet).')
 
     if weights == 'imagenet' and include_top and classes != 1000:
         raise ValueError('If using `weights` as imagenet with `include_top`'
@@ -261,11 +260,9 @@ def InceptionResNetV2Same(include_top=True,
     x = conv2d_bn(img_input, 32, 3, strides=2, padding='same')
     x = conv2d_bn(x, 32, 3, padding='same')
     x = conv2d_bn(x, 64, 3)
-    conv1 = x
-    x = MaxPooling2D(3, strides=2, padding='same')(x)
+    x = MaxPooling2D(3, strides=2, padding="same")(x)
     x = conv2d_bn(x, 80, 1, padding='same')
     x = conv2d_bn(x, 192, 3, padding='same')
-    conv2 = x
     x = MaxPooling2D(3, strides=2, padding='same')(x)
 
     # Mixed 5b (Inception-A block): 35 x 35 x 320
@@ -287,7 +284,7 @@ def InceptionResNetV2Same(include_top=True,
                                    scale=0.17,
                                    block_type='block35',
                                    block_idx=block_idx)
-    conv3 = x
+
     # Mixed 6a (Reduction-A block): 17 x 17 x 1088
     branch_0 = conv2d_bn(x, 384, 3, strides=2, padding='same')
     branch_1 = conv2d_bn(x, 256, 1)
@@ -303,7 +300,7 @@ def InceptionResNetV2Same(include_top=True,
                                    scale=0.1,
                                    block_type='block17',
                                    block_idx=block_idx)
-    conv4 = x
+
     # Mixed 7a (Reduction-B block): 8 x 8 x 2080
     branch_0 = conv2d_bn(x, 256, 1)
     branch_0 = conv2d_bn(branch_0, 384, 3, strides=2, padding='same')
@@ -330,7 +327,7 @@ def InceptionResNetV2Same(include_top=True,
 
     # Final convolution block: 8 x 8 x 1536
     x = conv2d_bn(x, 1536, 1, name='conv_7b')
-    conv5 = x
+
     if include_top:
         # Classification block
         x = GlobalAveragePooling2D(name='avg_pool')(x)
@@ -349,7 +346,7 @@ def InceptionResNetV2Same(include_top=True,
         inputs = img_input
 
     # Create model
-    model = Model(inputs, [conv1, conv2, conv3, conv4, conv5], name='inception_resnet_v2')
+    model = Model(inputs, x, name='inception_resnet_v2')
 
     # Load weights
     if weights == 'imagenet':
@@ -364,22 +361,17 @@ def InceptionResNetV2Same(include_top=True,
                               'your Keras config '
                               'at ~/.keras/keras.json.')
         if include_top:
-            fname = 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5'
-            weights_path = get_file(fname,
-                                    BASE_WEIGHT_URL + fname,
+            weights_filename = 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5'
+            weights_path = get_file(weights_filename,
+                                    BASE_WEIGHT_URL + weights_filename,
                                     cache_subdir='models',
-                                    file_hash='e693bd0210a403b3192acc6073ad2e96')
+                                    md5_hash='e693bd0210a403b3192acc6073ad2e96')
         else:
-            fname = 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5'
-            weights_path = get_file(fname,
-                                    BASE_WEIGHT_URL + fname,
+            weights_filename = 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5'
+            weights_path = get_file(weights_filename,
+                                    BASE_WEIGHT_URL + weights_filename,
                                     cache_subdir='models',
-                                    file_hash='d19885ff4a710c122648d3b5c3b684e4')
+                                    md5_hash='d19885ff4a710c122648d3b5c3b684e4')
         model.load_weights(weights_path)
-    elif weights is not None:
-        model.load_weights(weights)
 
     return model
-
-if __name__ == '__main__':
-    InceptionResNetV2Same(include_top=False, input_shape=(256, 256, 3)).summary()

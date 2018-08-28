@@ -1,11 +1,14 @@
 
 from keras import Model, Input
 from keras.applications import DenseNet169
-from keras.layers import UpSampling2D, Conv2D, BatchNormalization, Activation, concatenate, Add
+from keras.layers import UpSampling2D, Conv2D, BatchNormalization, Activation, concatenate, Add, SpatialDropout2D
 from keras.utils import get_file
 
 from models.xception_padding import Xception
 from models.resnets import ResNet101, ResNet152, ResNet50
+
+
+from models.classification_models.classification_models.resnet.models import ResNet34, ResNet18
 from models.resnetv2 import InceptionResNetV2Same
 
 resnet_filename = 'ResNet-{}-model.keras.h5'
@@ -14,7 +17,7 @@ resnet_resource = 'https://github.com/fizyr/keras-models/releases/download/v0.0.
 
 def download_resnet_imagenet(v):
     v = int(v.replace('resnet', ''))
-
+    
     filename = resnet_filename.format(v)
     resource = resnet_resource.format(v)
     if v == 50:
@@ -149,10 +152,82 @@ def resnet152_fpn(input_shape, channels=1, activation="softmax"):
     return model
 
 
-def resnet50_fpn(input_shape, channels=1, activation="softmax"):
+def resnet18_fpn(input_shape, channels=1, activation="softmax", train_base=False):
+    resnet_base = ResNet18(input_shape, weights='imagenet', include_top=False)
+    
+    for l in resnet_base.layers:
+        l.trainable = train_base
+    
+    conv1 = resnet_base.get_layer("relu0").output
+    conv2 = resnet_base.get_layer("stage2_unit1_relu1").output
+    conv3 = resnet_base.get_layer("stage3_unit1_relu1").output
+    conv4 = resnet_base.get_layer("stage4_unit1_relu1").output
+    conv5 = resnet_base.get_layer("relu1").output
+    P1, P2, P3, P4, P5 = create_pyramid_features(conv1, conv2, conv3, conv4, conv5)
+    x = concatenate(
+        [
+            prediction_fpn_block(P5, "P5", (8, 8)),
+            prediction_fpn_block(P4, "P4", (4, 4)),
+            prediction_fpn_block(P3, "P3", (2, 2)),
+            prediction_fpn_block(P2, "P2"),
+        ]
+    )
+    x = conv_bn_relu(x, 256, 3, (1, 1), name="aggregation")
+    x = decoder_block_no_bn(x, 128, conv1, 'up4')
+    x = UpSampling2D()(x)
+    x = conv_relu(x, 64, 3, (1, 1), name="up5_conv1")
+    x = conv_relu(x, 64, 3, (1, 1), name="up5_conv2")
+    # x = SpatialDropout2D(0.2)(x)
+    if activation == 'softmax':
+        name = 'mask_softmax'
+        x = Conv2D(channels, (1, 1), activation=activation, name=name)(x)
+    else:
+        x = Conv2D(channels, (1, 1), activation=activation, name="mask")(x)
+    model = Model(resnet_base.input, x)
+    return model
+
+def resnet34_fpn(input_shape, channels=1, activation="softmax", train_base=False):
+    resnet_base = ResNet34(input_shape, weights='imagenet', include_top=False)
+    
+    for l in resnet_base.layers:
+        l.trainable = train_base
+    
+    conv1 = resnet_base.get_layer("relu0").output
+    conv2 = resnet_base.get_layer("stage2_unit1_relu1").output
+    conv3 = resnet_base.get_layer("stage3_unit1_relu1").output
+    conv4 = resnet_base.get_layer("stage4_unit1_relu1").output
+    conv5 = resnet_base.get_layer("relu1").output
+    P1, P2, P3, P4, P5 = create_pyramid_features(conv1, conv2, conv3, conv4, conv5)
+    x = concatenate(
+        [
+            prediction_fpn_block(P5, "P5", (8, 8)),
+            prediction_fpn_block(P4, "P4", (4, 4)),
+            prediction_fpn_block(P3, "P3", (2, 2)),
+            prediction_fpn_block(P2, "P2"),
+        ]
+    )
+    x = conv_bn_relu(x, 256, 3, (1, 1), name="aggregation")
+    x = decoder_block_no_bn(x, 128, conv1, 'up4')
+    x = UpSampling2D()(x)
+    x = conv_relu(x, 64, 3, (1, 1), name="up5_conv1")
+    x = conv_relu(x, 64, 3, (1, 1), name="up5_conv2")
+    # x = SpatialDropout2D(0.2)(x)
+    if activation == 'softmax':
+        name = 'mask_softmax'
+        x = Conv2D(channels, (1, 1), activation=activation, name=name)(x)
+    else:
+        x = Conv2D(channels, (1, 1), activation=activation, name="mask")(x)
+    model = Model(resnet_base.input, x)
+    return model
+
+def resnet50_fpn(input_shape, channels=1, activation="softmax", train_base=True):
     img_input = Input(input_shape)
     resnet_base = ResNet50(img_input, include_top=True)
     resnet_base.load_weights(download_resnet_imagenet("resnet50"))
+    
+    for l in resnet_base.layers:
+        l.trainable = train_base
+    
     conv1 = resnet_base.get_layer("conv1_relu").output
     conv2 = resnet_base.get_layer("res2c_relu").output
     conv3 = resnet_base.get_layer("res3d_relu").output
@@ -172,6 +247,7 @@ def resnet50_fpn(input_shape, channels=1, activation="softmax"):
     x = UpSampling2D()(x)
     x = conv_relu(x, 64, 3, (1, 1), name="up5_conv1")
     x = conv_relu(x, 64, 3, (1, 1), name="up5_conv2")
+    # x = SpatialDropout2D(0.2)(x)
     if activation == 'softmax':
         name = 'mask_softmax'
         x = Conv2D(channels, (1, 1), activation=activation, name=name)(x)
@@ -180,6 +256,43 @@ def resnet50_fpn(input_shape, channels=1, activation="softmax"):
     model = Model(img_input, x)
     return model
 
+def resnet50_fpn_modified(input_shape, channels=1, activation="softmax", train_base=True):
+    img_input = Input(input_shape)
+    resnet_base = ResNet50(img_input, include_top=True)
+    resnet_base.load_weights(download_resnet_imagenet("resnet50"))
+    
+    for l in resnet_base.layers:
+        l.trainable = train_base
+    
+    conv1 = resnet_base.get_layer("conv1_relu").output
+    conv2 = resnet_base.get_layer("res2c_relu").output
+    conv3 = resnet_base.get_layer("res3d_relu").output
+    conv4 = resnet_base.get_layer("res4f_relu").output
+    conv5 = resnet_base.get_layer("res5c_relu").output
+    P1, P2, P3, P4, P5 = create_pyramid_features(conv1, conv2, conv3, conv4, conv5)
+    x = concatenate(
+        [
+            prediction_fpn_block(P5, "P5", (8, 8)),
+            prediction_fpn_block(P4, "P4", (4, 4)),
+            prediction_fpn_block(P3, "P3", (2, 2)),
+            prediction_fpn_block(P2, "P2"),
+        ]
+    )
+    x = SpatialDropout2D(0.4)(x)
+    x = conv_bn_relu(x, 256, 3, (1, 1), name="aggregation")
+    x = SpatialDropout2D(0.4)(x)
+    x = decoder_block_no_bn(x, 128, conv1, 'up4')
+    x = UpSampling2D()(x)
+    x = SpatialDropout2D(0.4)(x)
+    x = conv_relu(x, 128, 3, (1, 1), name="up5_conv1")
+    x = conv_relu(x, 128, 3, (1, 1), name="up5_conv2")
+    if activation == 'softmax':
+        name = 'mask_softmax'
+        x = Conv2D(channels, (1, 1), activation=activation, name=name)(x)
+    else:
+        x = Conv2D(channels, (1, 1), activation=activation, name="mask")(x)
+    model = Model(img_input, x)
+    return model
 
 def resnet101_fpn(input_shape, channels=1, activation="softmax"):
     img_input = Input(input_shape)

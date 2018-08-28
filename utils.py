@@ -2,10 +2,7 @@ import os
 import pandas as pd
 import cv2
 from tqdm import tqdm_notebook
-import logging
 from collections import defaultdict
-
-logger = logging.getLogger('log')
 
 from keras.layers import *
 from keras.optimizers import *
@@ -24,31 +21,22 @@ from augmentations import *
 import threading
 from params import args
 
+import scipy
 
+from albumentations import PadIfNeeded, CenterCrop, RandomCrop
 
-from albumentations import PadIfNeeded, CenterCrop
+# def read_image(path, input_size):
+#     img = cv2.imread(path, cv2.IMREAD_COLOR)
+#     img = cv2.resize(img, input_size)
+#     # [:,:,::-1]
 
-def read_image(path, input_size):
-    img = cv2.imread(path, cv2.IMREAD_COLOR)
+#     return img
     
-    augmentation = PadIfNeeded(min_height=input_size[0], min_width=input_size[1], p=1.0)
-    data = {"image": img}
-    img = augmentation(**data)["image"]
-    
-    # img = cv2.resize(img, input_size)
-    
-    return img
-    
-def read_mask(path, input_size):
-    mask = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    
-    augmentation = PadIfNeeded(min_height=input_size[0], min_width=input_size[1], p=1.0)
-    data = {"image": mask}
-    mask = augmentation(**data)["image"]
-    
-    # mask = cv2.resize(mask, input_size)
-    
-    return mask  
+# def read_mask(path, input_size):
+#     mask = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+#     mask = cv2.resize(mask, input_size)
+
+#     return mask  
 
 class ThreadsafeIter(object):
     def __init__(self, it):
@@ -66,141 +54,6 @@ def poolcontext(*args, **kwargs):
     pool = multiprocessing.Pool(*args, **kwargs)
     yield pool
     pool.terminate()
-
-    
-def get_model(weights_path, model_name):
-    if model_name == 'unet_128':
-        input_size = (128,128,1)
-
-        model = models_zoo.get_unet_128(input_size)
-
-        model.compile(optimizer=RMSprop(lr=0.0001), loss=make_loss('bce_dice'),
-                      metrics=[dice_coef, jacard_coef])
-
-        augs = get_augmentations('initial',p=0.9)
-
-        callbacks = get_callback('reduce_lr', weights_path=weights_path, early_stop_patience=20, reduce_lr_factor=0.5, reduce_lr_patience=10,
-                                 reduce_lr_min=0.000001)
-
-
-    elif model_name == 'unet_128_dropout_adam':
-        input_size = (128,128,1)
-
-        model = models_zoo.get_unet_128_do_adam(input_size)
-
-        model.compile(optimizer=Adam(lr=0.0001), loss=make_loss('bce_dice'), metrics=[dice_coef, jacard_coef])
-
-        augs = get_augmentations('initial',p=0.75)
-
-        callbacks = get_callback('reduce_lr', weights_path=weights_path, early_stop_patience=10, reduce_lr_factor=0.25, reduce_lr_patience=5,
-                                 reduce_lr_min=0.000001)
-
-    elif model_name == 'unet_128_v2':
-        input_size = (128,128,1)
-
-        model = models_zoo.get_unet_128(input_size)
-
-        model.compile(optimizer=RMSprop(lr=0.0001), loss=make_loss('bce_dice'),
-                      metrics=[dice_coef, jacard_coef])
-
-        augs = get_augmentations('initial',p=0.75)
-
-        callbacks = get_callback('reduce_lr', weights_path=weights_path, early_stop_patience=10, reduce_lr_factor=0.25, reduce_lr_patience=5,
-                                 reduce_lr_min=0.000001)
-        
-    elif model_name == 'unet_128_jacard':
-        input_size = (128,128,3)
-
-        model = models_zoo.get_unet_128(input_size)
-
-        model.compile(optimizer=RMSprop(lr=0.0001), loss=make_loss('bce_jacard'),
-                      metrics=[dice_coef, jacard_coef])
-
-        augs = get_augmentations('initial',p=0.9)
-
-        callbacks = get_callback('early_stopping', weights_path=weights_path, early_stop_patience=5)
-        
-        def preprocess(img):
-            return img / 255.
-        
-    elif model_name == 'resnet_50_224':
-        input_size = (224,224,3)
-
-        model = models_zoo.get_unet_resnet_50(input_size)
-
-        model.compile(optimizer=RMSprop(lr=0.0001), loss=make_loss('bce_jacard'),
-                      metrics=[dice_coef, jacard_coef])
-
-        augs = get_augmentations('initial',p=0.9)
-
-        #callbacks = get_callback('early_stopping', weights_path=weights_path, early_stop_patience=5)
-        callbacks = get_callback('reduce_lr', weights_path=weights_path, early_stop_patience=10, reduce_lr_factor=0.25, reduce_lr_patience=5,
-                                 reduce_lr_min=0.000001)
-        
-        from keras.applications.resnet50 import preprocess_input
-        
-        def preprocess(img):
-            return preprocess_input(img)
-            
-    elif model_name == 'resnet_50_224_old':
-        input_size = (224,224,3)
-
-        model = models_zoo.unet_resnet_50(input_size)
-
-        model.compile(optimizer=RMSprop(lr=0.0001), loss=make_loss('bce_jacard'),
-                      metrics=[dice_coef, jacard_coef])
-
-        augs = get_augmentations('initial',p=0.9)
-
-        #callbacks = get_callback('early_stopping', weights_path=weights_path, early_stop_patience=5)
-        callbacks = get_callback('reduce_lr', weights_path=weights_path, early_stop_patience=10, reduce_lr_factor=0.25, reduce_lr_patience=5,
-                                 reduce_lr_min=0.000001)
-        
-        from keras.applications.resnet50 import preprocess_input
-        
-        def preprocess(img):
-            return preprocess_input(img)    
-        
-    elif model_name == 'resnet50_fpn_old':
-        input_size = (128,128,3)
-
-        model = unets.resnet50_fpn(input_size, channels=1, activation="sigmoid")
-
-        model.compile(optimizer=RMSprop(lr=0.0001), loss=make_loss('bce_jacard'),
-                      metrics=[dice_coef, jacard_coef])
-
-        augs = get_augmentations('initial',p=0.9)
-
-        #callbacks = get_callback('early_stopping', weights_path=weights_path, early_stop_patience=5)
-        callbacks = get_callback('reduce_lr', weights_path=weights_path, early_stop_patience=10, reduce_lr_factor=0.25, reduce_lr_patience=5,
-                                 reduce_lr_min=0.000001)
-        
-        from keras.applications.resnet50 import preprocess_input
-        
-        def preprocess(img):
-            return preprocess_input(img)
-        
-    elif model_name == 'resnet50_fpn':
-        
-        model = unets.resnet50_fpn((args.input_size, args.input_size, 3), channels=1, activation="sigmoid")
-
-        model.compile(optimizer=RMSprop(lr=args.learning_rate), loss=make_loss(args.loss_function),
-                      metrics=[dice_coef, jacard_coef])
-
-        augs = get_augmentations(args.augmentation_name, p=args.augmentation_prob)
-
-        #callbacks = get_callback('early_stopping', weights_path=weights_path, early_stop_patience=5)
-        callbacks = get_callback(args.callback, weights_path=weights_path, early_stop_patience=args.early_stop_patience, reduce_lr_factor=args.reduce_lr_factor, reduce_lr_patience=args.reduce_lr_patience, reduce_lr_min=args.reduce_lr_min)
-        
-        from keras.applications.resnet50 import preprocess_input
-        
-        def preprocess(img):
-            return preprocess_input(img) 
-
-    else:
-        ValueError("Unknown Model")
-
-    return model, callbacks, augs, preprocess
 
 
 # Cumsum channel
@@ -220,29 +73,35 @@ def get_model(weights_path, model_name):
 # path_test = '../input/test/'
 
 
-def noise_cv():
-    DATA_ROOT = 'data/'
-    n_fold = 5
-    print(os.path.join(DATA_ROOT, 'depths.csv'))
-    depths = pd.read_csv(os.path.join(DATA_ROOT, 'depths.csv'))
-    depths.sort_values('z', inplace=True)
-    depths.drop('z', axis=1, inplace=True)
-    depths['fold'] = (list(range(n_fold)) * depths.shape[0])[:depths.shape[0]]
-    depths.to_csv(os.path.join(DATA_ROOT, 'folds.csv'), index=False)
-
-
 def read_image_test(id, TTA, oof, preprocess):
+    
+    
+    
     if oof:
-        img = read_image(os.path.join(args.images_dir,'{}.png'.format(id)), (args.input_size,args.input_size))
+        #img = read_image(os.path.join(args.images_dir,'{}.png'.format(id)), (args.input_size,args.input_size))
+        img = cv2.imread(os.path.join(args.images_dir,'{}.png'.format(id)), cv2.IMREAD_COLOR)
     else:
-        img = read_image(os.path.join(args.test_folder,'{}.png'.format(id)), (args.input_size,args.input_size))
+        #img = read_image(os.path.join(args.test_folder,'{}.png'.format(id)), (args.input_size,args.input_size))
+        img = cv2.imread(os.path.join(args.test_folder,'{}.png'.format(id)), cv2.IMREAD_COLOR)
     
     imgs = []
 
     if TTA == '':
         img = np.array(img, np.float32)
-        img = preprocess(img)
-        imgs.append(img)
+        
+        img = cv2.resize(img, (args.resize_size,args.resize_size))
+        augmentation = PadIfNeeded(min_height=args.input_size, min_width=args.input_size, p=1.0) 
+        data = {"image": img}
+        img = augmentation(**data)["image"]
+        img = np.array(img, np.float32)
+        
+        imgs.append(preprocess(img))
+        
+        # Crops Prediction
+#         imgs.append(preprocess(img[:args.input_size,:args.input_size,:].astype('float32')))
+#         imgs.append(preprocess(img[-args.input_size:,-args.input_size:,:].astype('float32')))
+#         imgs.append(preprocess(img[:args.input_size,-args.input_size:,:].astype('float32')))
+#         imgs.append(preprocess(img[-args.input_size:,:args.input_size,:].astype('float32')))
 
     elif TTA == 'flip':
         augmentation = HorizontalFlip(p=1)
@@ -251,8 +110,14 @@ def read_image_test(id, TTA, oof, preprocess):
         
         for im in [img,img2]:
             im = np.array(im, np.float32)
-            im = preprocess(im)
-            imgs.append(im)
+        
+            im = cv2.resize(im, (args.resize_size,args.resize_size))
+            augmentation = PadIfNeeded(min_height=args.input_size, min_width=args.input_size, p=1.0) 
+            data = {"image": im}
+            im = augmentation(**data)["image"]
+            im = np.array(im, np.float32)
+
+            imgs.append(preprocess(im))
 
     elif TTA == 'D4':
         pass
@@ -325,6 +190,39 @@ def _get_augmentations_count(TTA=''):
 #     else:
 #         return pred
 
+def classification_predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', preprocess=None):
+    num_images = ids.shape[0]
+    probs = []
+    for start in tqdm_notebook(range(0, num_images, batch_size)):
+        end = min(start + batch_size, num_images)
+
+        augment_number_per_image = _get_augmentations_count(TTA)
+        images = [read_image_test(x, TTA=TTA, oof=oof, preprocess = preprocess) for x in ids[start:end]]
+        images = [item for sublist in images for item in sublist]
+
+        X = np.array([x for x in images])
+        preds = model.predict_on_batch(X)
+
+        total = 0
+        for idx in range(end - start):
+            part = []
+            for aug in range(augment_number_per_image):
+
+                prob = preds[total]
+
+                if aug == 0:
+                    pass
+                elif aug == 1:
+                    augmentation = HorizontalFlip(p=1)
+                    data = {'image': prob}
+                    prob = augmentation(**data)['image']
+                part.append(prob)
+                total += 1
+            part = np.mean(np.array(part))
+            probs.append(part)
+
+    return probs
+
 def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', preprocess=None):
     num_images = ids.shape[0]
     with poolcontext(processes=12) as pool:
@@ -335,23 +233,39 @@ def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', prepr
             augment_number_per_image = _get_augmentations_count(TTA)
             #images = pool.map(partial(read_image_test, TTA=TTA, oof=oof, preprocess = preprocess), ids[start:end])
             images = [read_image_test(x, TTA=TTA, oof=oof, preprocess = preprocess) for x in ids[start:end]]
-
             images = [item for sublist in images for item in sublist]
 
             X = np.array([x for x in images])
-
             preds = model.predict_on_batch(X)
 
             total = 0
             for idx in range(end - start):
                 part = []
                 for aug in range(augment_number_per_image):
+
+                    # Crops prediction
+#                     mask_zeroes = np.zeros((args.initial_size,args.initial_size,1))
+#                     mask_zeroes_mult = np.zeros((args.initial_size,args.initial_size,1))
                     
-                    # prob = cv2.resize(preds[total], (args.initial_size,args.initial_size))
+#                     mask_zeroes[:args.input_size,:args.input_size,:] += preds[total]
+#                     mask_zeroes[-args.input_size:,-args.input_size:,:] += preds[total+1]
+#                     mask_zeroes[:args.input_size,-args.input_size:,:] += preds[total+2]
+#                     mask_zeroes[-args.input_size:,:args.input_size,:] += preds[total+3]
                     
-                    augmentation = CenterCrop(height = args.initial_size, width = args.initial_size, p = 1.0)
+#                     mask_zeroes_mult[:args.input_size,:args.input_size,:] += 1
+#                     mask_zeroes_mult[-args.input_size:,-args.input_size:,:] += 1
+#                     mask_zeroes_mult[:args.input_size,-args.input_size:,:] += 1
+#                     mask_zeroes_mult[-args.input_size:,:args.input_size,:] += 1
+                    
+#                     prob = mask_zeroes/mask_zeroes_mult
+                    
+    #FROG
+                    augmentation = CenterCrop(height = 128, width = 128, p = 1.0)
                     data = {"image": preds[total]}
                     prob = augmentation(**data)["image"]
+                    prob = cv2.resize(prob, (args.initial_size,args.initial_size))
+    
+                    # prob = cv2.resize(preds[total], (args.initial_size,args.initial_size))
                     
                     if aug == 0:
                         pass
@@ -370,12 +284,20 @@ def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', prepr
         return rles
 
 
-def ensemble(model_dirs, folds, ids, thr):
+def ensemble(model_dirs, folds, ids, thr, classification):
     rles = []
+    if classification != '':
+        df_dict = {'0':pd.read_csv(os.path.join(classification,'fold_0/probs_test_fold_0.csv')),
+                  '1':pd.read_csv(os.path.join(classification,'fold_1/probs_test_fold_1.csv')),
+                  '2':pd.read_csv(os.path.join(classification,'fold_2/probs_test_fold_2.csv')),
+                  '3':pd.read_csv(os.path.join(classification,'fold_3/probs_test_fold_3.csv')),
+                  '4':pd.read_csv(os.path.join(classification,'fold_4/probs_test_fold_4.csv'))}
+                    
     for img_id in tqdm_notebook(ids):
         preds = []
         for d in model_dirs:
             pred_folds = []
+            prob_all_folds = 1
             for fold in folds:
                 path = os.path.join(d, 'fold_{}'.format(fold))
                 mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
@@ -385,18 +307,25 @@ def ensemble(model_dirs, folds, ids, thr):
                     pred_folds.append(np.zeros(mask.shape))
                 else:
                     pred_folds.append(np.array(mask / 255, np.float32))
-            
+                
+                if classification != '':
+                    tt=df_dict[str(fold)]
+                    prob = tt[tt.id==img_id].prob.values[0]
+                    prob_all_folds*=prob  
+
             preds.append(np.mean(np.array(pred_folds), axis=0))
         final_pred = np.mean(np.array(preds), axis=0)
         # final_pred = cv2.blur(final_pred,(11,11))
+     
+        if classification != '':
+            final_pred*=prob_all_folds**(1/5)
         
         mask = final_pred > thr
         rle = RLenc(mask)
         rles.append(rle)
     return rles
 
-import scipy
-def evaluate(model_dirs, ids, thr):
+def evaluate(model_dirs, ids, thr, classification):
     metrics = defaultdict(list)
 
     for img_id in tqdm_notebook(ids):
@@ -421,6 +350,14 @@ def evaluate(model_dirs, ids, thr):
         
         # https://docs.opencv.org/3.1.0/d4/d13/tutorial_py_filtering.html
         # final_pred = cv2.blur(final_pred,(11,11))
+        
+        if classification != '':
+            tt = pd.read_csv(os.path.join(classification,'probs_oof.csv'))
+            prob = tt[tt.id==img_id].prob.values[0]
+            if prob < 0.5:
+                final_pred = np.zeros(mask.shape)
+            #final_pred*=prob
+        
         final_pred = final_pred > thr
 
         
@@ -480,3 +417,121 @@ def freeze_model(model, freeze_before_layer):
 # else:
 #     cv2.imwrite(f'output/{name}/fold{fold}/valid/{i + 1}_{epoch + 1:03d}_{suffix}.png', im)```
 
+
+
+# bad_masks =[
+# '1eaf42beee.png'
+# ,'33887a0ae7.png'
+# ,'33dfce3a76.png'
+# ,'3975043a11.png'
+# ,'39cd06da7d.png'
+# ,'483b35d589.png'
+# ,'49336bb17b.png'
+# ,'4ef0559016.png'
+# ,'4fbda008c7.png'
+# ,'4fdc882e4b.png'
+# ,'50d3073821.png'
+# ,'53e17edd83.png'
+# ,'5b217529e7.png'
+# ,'5f98029612.png'
+# ,'608567ed23.png'
+# ,'62aad7556c.png'
+# ,'62d30854d7.png'
+# ,'6460ce2df7.png'
+# ,'6bc4c91c27.png'
+# ,'7845115d01.png'
+# ,'7deaf30c4a.png'
+# ,'80a458a2b6.png'
+# ,'81fa3d59b8.png'
+# ,'8367b54eac.png'
+# ,'849881c690.png'
+# ,'876e6423e6.png'
+# ,'90720e8172.png'
+# ,'916aff36ae.png'
+# ,'919bc0e2ba.png'
+# ,'a266a2a9df.png'
+# ,'a6625b8937.png'
+# ,'a9ee40cf0d.png'
+# ,'aeba5383e4.png'
+# ,'b63b23fdc9.png'
+# ,'baac3469ae.png'
+# ,'be7014887d.png'
+# ,'be90ab3e56.png'
+# ,'bfa7ee102e.png'
+# ,'bfbb9b9149.png'
+# ,'c387a012fc.png'
+# ,'c98dfd50ba.png'
+# ,'caccd6708f.png'
+# ,'cb4f7abe67.png'
+# ,'d0bbe4fd97.png'
+# ,'d4d2ed6bd2.png'
+# ,'de7202d286.png'
+# ,'f0c401b64b.png'
+# ,'f19b7d20bb.png'
+# ,'f641699848.png'
+# ,'f75842e215.png'
+# ,'00950d1627.png'
+# ,'0280deb8ae.png'
+# ,'06d21d76c4.png'
+# ,'09152018c4.png'
+# ,'09b9330300.png'
+# ,'0b45bde756.png'
+# ,'130229ec15.png'
+# ,'15d76f1672.png'
+# ,'182bfc6862.png'
+# ,'23afbccfb5.png'
+# ,'24522ec665.png'
+# ,'285f4b2e82.png'
+# ,'2bc179b78c.png'
+# ,'2f746f8726.png'
+# ,'3cb59a4fdc.png'
+# ,'403cb8f4b3.png'
+# ,'4f5df40ab2.png'
+# ,'50b3aef4c4.png'
+# ,'52667992f8.png'
+# ,'52ac7bb4c1.png'
+# ,'56f4bcc716.png'
+# ,'58de316918.png'
+# ,'640ceb328a.png'
+# ,'71f7425387.png'
+# ,'7c0b76979f.png'
+# ,'7f0825a2f0.png'
+# ,'834861f1b6.png'
+# ,'87afd4b1ca.png'
+# ,'88a5c49514.png'
+# ,'9067effd34.png'
+# ,'93a1541218.png'
+# ,'95f6e2b2d1.png'
+# ,'96216dae3b.png'
+# ,'96523f824a.png'
+# ,'99ee31b5bc.png'
+# ,'9a4b15919d.png'
+# ,'9b29ca561d.png'
+# ,'9eb4a10b98.png'
+# ,'ad2fa649f7.png'
+# ,'b1be1fa682.png'
+# ,'b24d3673e1.png'
+# ,'b35b1b412b.png'
+# ,'b525824dfc.png'
+# ,'b7b83447c4.png'
+# ,'b8a9602e21.png'
+# ,'ba1287cb48.png'
+# ,'be18a24c49.png'
+# ,'c27409a765.png'
+# ,'c2973c16f1.png'
+# ,'c83d9529bd.png'
+# ,'cef03959d8.png'
+# ,'d4d34af4f7.png'
+# ,'d9a52dc263.png'
+# ,'dd6a04d456.png'
+# ,'ddcb457a07.png'
+# ,'e12cd094a6.png'
+# ,'e6e3e58c43.png'
+# ,'e73ed6e7f2.png'
+# ,'f6e87c1458.png'
+# ,'f7380099f6.png'
+# ,'fb3392fee0.png'
+# ,'fb47e8e74e.png'
+# ,'febd1d2a67.png'
+#     ]
+# bad_masks = [x.split('.')[0] for x in bad_masks]
