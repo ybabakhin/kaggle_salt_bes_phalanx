@@ -1,11 +1,8 @@
 import cv2
 import numpy as np
-#from utils import read_image, read_mask
 from params import args
 import os
 from albumentations import RandomCrop, CenterCrop, PadIfNeeded
-
-
 
 
 class SegmentationDataGenerator:
@@ -30,7 +27,7 @@ class SegmentationDataGenerator:
 
         img = cv2.resize(img, (args.resize_size,args.resize_size))
         mask = cv2.resize(mask, (args.resize_size,args.resize_size))
-        augmentation = PadIfNeeded(min_height=self.input_shape[0], min_width=self.input_shape[1], p=1.0) 
+        augmentation = PadIfNeeded(min_height=self.input_shape[0], min_width=self.input_shape[1], p=1.0, border_mode=4) 
         data = {"image": img, "mask": mask}
         augmented = augmentation(**data)
         img, mask = augmented["image"], augmented["mask"]
@@ -66,48 +63,6 @@ class SegmentationDataGenerator:
             mask = np.expand_dims(mask, axis=2)
 
         return (img, mask)
-#     def _read_image_train(self, id):
-#         # Read with resizing
-#         img = read_image(os.path.join(args.images_dir,'{}.png'.format(id)), self.input_shape)
-#         mask = read_mask(os.path.join(args.masks_dir,'{}.png'.format(id)), self.input_shape)
-        
-#         img = np.array(img, np.float32)
-
-#         if self.augs:
-#             data = {"image": img, "mask": mask}
-#             augmented = self.augs(**data)
-#             img, mask = augmented["image"], augmented["mask"]
-
-#         img = self.preprocess(img)
-        
-#         mask = np.array(mask / 255., np.float32)
-#         #mask = np.where(mask < 0.5, 0, 1)
-#         if len(mask.shape) < 3:
-#             mask = np.expand_dims(mask, axis=2)
-        
-#         return (img, mask)
-
-
-#     def _read_image_valid(self, id):
-#         img = read_image(os.path.join(args.images_dir,'{}.png'.format(id)), self.input_shape)
-#         mask = read_mask(os.path.join(args.masks_dir,'{}.png'.format(id)), self.input_shape)
-        
-#         img = np.array(img, np.float32)
-        
-# #         augmentation = CenterCrop(height = self.input_shape[1], width = self.input_shape[0], p = 1.0)
-# #         data = {"image": img, "mask": mask}
-# #         augmented = augmentation(**data)
-# #         img, mask = augmented["image"], augmented["mask"]
-        
-        
-#         img = self.preprocess(img)
-        
-#         mask = np.array(mask / 255., np.float32)
-#         #mask = np.where(mask < 0.5, 0, 1)
-#         if len(mask.shape) < 3:
-#             mask = np.expand_dims(mask, axis=2)
-
-#         return (img, mask)
 
 
     def train_batch_generator(self, ids):

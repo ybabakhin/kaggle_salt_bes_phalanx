@@ -230,6 +230,110 @@ def unet_resnet_34(input_shape):
     model = Model(resnet_base.input, x)
     return model
 
+def unet_resnet_34_do(input_shape):
+    resnet_base = ResNet34(input_shape, weights='imagenet', include_top=False)
+    
+    for l in resnet_base.layers:
+        l.trainable = True
+    
+    conv1 = resnet_base.get_layer("relu0").output
+    conv2 = resnet_base.get_layer("stage2_unit1_relu1").output
+    conv3 = resnet_base.get_layer("stage3_unit1_relu1").output
+    conv4 = resnet_base.get_layer("stage4_unit1_relu1").output
+    conv5 = resnet_base.get_layer("relu1").output
+
+#     middle = conv_block_simple(middle, 1024, "conv5_1")
+#     middle = conv_block_simple(middle, 1024, "conv5_2")
+#     up6_0 = concatenate([UpSampling2D()(middle), conv5], axis=-1)
+#     conv6_0 = conv_block_simple(up6_0, 256, "conv6_0_1")
+#     conv6_0 = conv_block_simple(conv6_0, 256, "conv6_0_2")
+#     up6 = concatenate([UpSampling2D()(conv6_0), conv4], axis=-1)
+
+# capacity to 512 -> 256 -> 128 -> 64 -> 32
+    up6 = concatenate([UpSampling2D()(conv5), conv4], axis=-1)
+    conv6 = conv_block_simple(up6, 256, "conv6_1")
+    conv6 = conv_block_simple(conv6, 256, "conv6_2")
+
+    up7 = concatenate([UpSampling2D()(conv6), conv3], axis=-1)
+    conv7 = conv_block_simple(up7, 192, "conv7_1")
+    conv7 = conv_block_simple(conv7, 192, "conv7_2")
+
+    up8 = concatenate([UpSampling2D()(conv7), conv2], axis=-1)
+    conv8 = conv_block_simple(up8, 128, "conv8_1")
+    conv8 = SpatialDropout2D(0.2)(conv8)
+    conv8 = conv_block_simple(conv8, 128, "conv8_2")
+
+    up9 = concatenate([UpSampling2D()(conv8), conv1], axis=-1)
+    conv9 = conv_block_simple(up9, 64, "conv9_1")
+    conv9 = SpatialDropout2D(0.2)(conv9)
+    conv9 = conv_block_simple(conv9, 64, "conv9_2")
+
+    up10 = concatenate([UpSampling2D()(conv9), resnet_base.input], axis=-1)
+    conv10 = conv_block_simple(up10, 32, "conv10_1")
+    conv10 = conv_block_simple(conv10, 32, "conv10_2")
+    
+    conv10 = SpatialDropout2D(0.4)(conv10)
+    x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(conv10)
+    model = Model(resnet_base.input, x)
+    return model
+
+# def unet_resnet_34_do_corrupted(input_shape):
+#     resnet_base = ResNet34(input_shape, weights='imagenet', include_top=False)
+    
+#     for l in resnet_base.layers:
+#         l.trainable = True
+    
+#     conv1 = resnet_base.get_layer("relu0").output
+#     conv2 = resnet_base.get_layer("stage2_unit1_relu1").output
+#     conv3 = resnet_base.get_layer("stage3_unit1_relu1").output
+#     conv4 = resnet_base.get_layer("stage4_unit1_relu1").output
+#     conv5 = resnet_base.get_layer("relu1").output
+
+#     #conv5 = conv_block_simple(conv5, 512, "conv5_1")
+#     #conv5 = conv_block_simple(conv5, 512, "conv5_2")
+    
+#     up6 = concatenate([UpSampling2D()(conv5), conv4], axis=-1)
+#     #up6 = concatenate([Conv2DTranspose(512, (3, 3), strides=(2, 2), padding="same")(conv5), conv4], axis=-1)
+    
+#     conv6 = conv_block_simple(up6, 256, "conv6_1")
+#     conv6 = conv_block_simple(conv6, 256, "conv6_2")
+
+#     up7 = concatenate([UpSampling2D()(conv6), conv3], axis=-1)
+#     #up7 = concatenate([Conv2DTranspose(256, (3, 3), strides=(2, 2), padding="same")(conv6), conv3], axis=-1)
+#     conv7 = conv_block_simple(up7, 192, "conv7_1")
+#     conv7 = conv_block_simple(conv7, 192, "conv7_2")
+
+#     up8 = concatenate([UpSampling2D()(conv7), conv2], axis=-1)
+#     #up8 = concatenate([Conv2DTranspose(192, (3, 3), strides=(2, 2), padding="same")(conv7), conv2], axis=-1)
+#     conv8 = conv_block_simple(up8, 128, "conv8_1")
+#     conv8 = SpatialDropout2D(0.2)(conv8)
+#     conv8 = conv_block_simple(conv8, 128, "conv8_2")
+    
+#     up9 = concatenate([UpSampling2D()(conv8), conv1], axis=-1)
+#     #up9 = concatenate([Conv2DTranspose(128, (3, 3), strides=(2, 2), padding="same")(conv8), conv1], axis=-1)
+#     conv9 = conv_block_simple(up9, 64, "conv9_1")
+#     conv9 = SpatialDropout2D(0.2)(conv9)
+#     conv9 = conv_block_simple(conv9, 64, "conv9_2")
+
+#     # Delete first maxpooling in the resnet. And train with 128?
+#     # Compare to 256 better
+#     # Upconvolutions
+    
+#     up10 = concatenate([UpSampling2D()(conv9), resnet_base.input], axis=-1)
+#     #up10 = concatenate([Conv2DTranspose(64, (3, 3), strides=(2, 2), padding="same")(conv9), resnet_base.input], axis=-1)
+#     conv10 = conv_block_simple(up10, 32, "conv10_1")
+#     conv10 = conv_block_simple(conv10, 32, "conv10_2")
+    
+#     # bs == 2: UpSampling2D(size=(32,32))(conv5)
+# #     f = concatenate([conv10, UpSampling2D(size=(2,2))(conv9), UpSampling2D(size=(4,4))(conv8),
+# #                          UpSampling2D(size=(8,8))(conv7),UpSampling2D(size=(16,16))(conv6)], axis=-1)
+    
+#     conv10 = SpatialDropout2D(0.4)(conv10)
+#     #f = SpatialDropout2D(0.4)(f)
+#     x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(conv10)
+#     model = Model(resnet_base.input, x)
+#     return model
+
 def unet_resnet_50(input_shape):
     resnet_base = ResNet50(input_shape, weights='imagenet', include_top=False)
     
@@ -421,7 +525,7 @@ def unet_resnet_152(input_shape):
     conv10 = conv_block_simple(up10, 32, "conv10_1")
     conv10 = conv_block_simple(conv10, 32, "conv10_2")
     
-    conv10 = SpatialDropout2D(0.2)(conv10)
+    conv10 = SpatialDropout2D(0.4)(conv10)
     x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(conv10)
     model = Model(resnet_base.input, x)
     return model

@@ -1,4 +1,4 @@
-from models.models_zoo import simple_unet, simple_unet_v2, unet_resnet_50_vgg, unet_inception_resnet_v2, unet_mobilenet, unet_vgg_16, unet_resnet_18, unet_resnet_34, unet_resnet_50, unet_resnet_101, unet_resnet_152, unet_resnet_101_do,unet_resnet_101_do_capacity,resnet_34_classification
+from models.models_zoo import simple_unet, simple_unet_v2, unet_resnet_50_vgg, unet_inception_resnet_v2, unet_mobilenet, unet_vgg_16, unet_resnet_18, unet_resnet_34, unet_resnet_50, unet_resnet_101, unet_resnet_152, unet_resnet_101_do,unet_resnet_101_do_capacity,resnet_34_classification, unet_resnet_34_do
 from models.unets import resnet18_fpn, resnet34_fpn, resnet152_fpn, resnet101_fpn, resnet50_fpn, xception_fpn,  densenet_fpn, inception_resnet_v2_fpn, resnet50_fpn_modified
 
 from keras.applications.resnet50 import preprocess_input as preprocess_input_resnet50
@@ -48,6 +48,11 @@ def get_model(network, input_shape, train_base=True):
     elif network == 'unet_resnet_34':
         model = unet_resnet_34(input_shape)
         return model, preprocess_input_resnet_18_34
+    elif network == 'unet_resnet_34_do':
+        model = unet_resnet_34_do(input_shape)
+        return model, preprocess_input_resnet_18_34
+    
+    
     
     elif network == 'unet_resnet_50':
         model = unet_resnet_50(input_shape)

@@ -128,28 +128,54 @@ class TensorBoardPrediction(Callback):
 
 def get_callback(callback, **kwargs):
     if callback == 'early_stopping':
-        es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience)
+        es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience, min_delta=0.0005)
+        #es_callback = EarlyStopping(monitor="val_competitionMetric2", patience=args.early_stop_patience, mode='max')
+        
+#         from keras.callbacks import LearningRateScheduler
+#         def step_decay_schedule(initial_lr=1e-3, decay_factor=0.75, step_size=10):
+#             '''
+#             Wrapper function to create a LearningRateScheduler with step decay schedule.
+#             '''
+#             def schedule(epoch):
+#                 return initial_lr if epoch <= 15 else initial_lr/4
+
+#             return LearningRateScheduler(schedule)
+
+#         lr_sched = step_decay_schedule(initial_lr=1e-4)
+
 
         callbacks = [es_callback]
 
     elif callback == 'reduce_lr':
         es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience)
+        #es_callback = EarlyStopping(monitor="val_competitionMetric2", patience=args.early_stop_patience, mode='max')
         reduce_lr = ReduceLROnPlateau(factor=args.reduce_lr_factor, patience=args.reduce_lr_patience,
                                       min_lr=args.reduce_lr_min, verbose=1)
+#         reduce_lr = ReduceLROnPlateau(monitor='val_competitionMetric2',factor=args.reduce_lr_factor, patience=args.reduce_lr_patience,
+#                                       min_lr=args.reduce_lr_min, verbose=1, mode='max')
         callbacks = [es_callback, reduce_lr]
 
     elif callback == 'cyclic_lr':
         es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience)
 
         # Cyclic LR
-        clr_triangular = CyclicLR(mode='triangular', base_lr=args.learning_rate/4, max_lr=learning_rate, step_size=400.)
+        clr_triangular = CyclicLR(mode='triangular2', base_lr=args.learning_rate/12, max_lr=args.learning_rate, step_size=800)
         callbacks = [es_callback, clr_triangular]
 
     else:
         ValueError("Unknown callback")
 
-    mc_callback = ModelCheckpoint(kwargs['weights_path'], monitor='val_loss', verbose=0, save_best_only=True,
-                                  save_weights_only=True, mode='auto', period=1)
+#     mc_callback = ModelCheckpoint(kwargs['weights_path']+'.{epoch:02d}-{val_loss:.2f}-{val_competitionMetric2:.4f}-{val_Kaggle_IoU_Precision:.4f}.hdf5', monitor='val_loss', verbose=0, save_best_only=False,
+#                                   save_weights_only=True, mode='auto', period=1)
+
+#     mc_callback = ModelCheckpoint(kwargs['weights_path'], monitor='val_loss', verbose=0, save_best_only=True,
+#                                   save_weights_only=True, mode='auto', period=1)
+    
+    mc_callback = ModelCheckpoint(kwargs['weights_path'], monitor='val_Kaggle_IoU_Precision', verbose=0, save_best_only=True,
+                                  save_weights_only=True, mode='max', period=1)
+    
+    
+    
     callbacks.append(mc_callback)
     
     tensorboard_dir = os.path.join(args.models_dir,'logs/','_'.join(kwargs['weights_path'].split('/')[-2:]))

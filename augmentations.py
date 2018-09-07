@@ -21,22 +21,29 @@ def get_augmentations(augmentation, p, input_shape):
                 RandomCrop(height=input_shape[0], width=input_shape[1])
             ], p=p)
         
-    elif augmentation == 'valid':
-        augmentations = Compose([
-                HorizontalFlip(p=.5),
-                RandomBrightness(p=.2),
-                ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.4, rotate_limit=0, p=.7)
-            ], p=p)
+#     elif augmentation == 'valid':
+#         augmentations = Compose([
+#                 HorizontalFlip(p=.5),
+#                 RandomBrightness(p=.2),
+#                 ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.4, rotate_limit=0, p=.7)
+#             ], p=p)
     # Distortion?    
     elif augmentation == 'valid_plus':
         augmentations = Compose([
-            #RandomRotate90(p=1),
                 HorizontalFlip(p=.5),
                 RandomBrightness(p=.2,limit=0.2),
                 RandomContrast(p=.1,limit=0.2),
-                ShiftScaleRotate(shift_limit=0.1625, scale_limit=0.6, rotate_limit=0, p=0.7),
-            OpticalDistortion(distort_limit=0.05, shift_limit=0.05, interpolation=1, border_mode=4, p=0.2)
+                ShiftScaleRotate(shift_limit=0.1625, scale_limit=0.6, rotate_limit=0, p=0.7)
             ], p=p)
+        
+#     elif augmentation == 'valid_plus_exp':
+#         augmentations = Compose([
+#                 HorizontalFlip(p=.5),
+#                 RandomBrightness(p=.2,limit=0.2),
+#                 RandomContrast(p=.1,limit=0.2),
+#                 ShiftScaleRotate(shift_limit=0.1625, scale_limit=0., rotate_limit=0, p=1),
+#                 RandomCrop(height=96, width=96,p=1)
+#             ], p=1)
 
 
 # OpticalDistortion(distort_limit=0.05, shift_limit=0.05, interpolation=1, border_mode=4, p=0.5)
@@ -59,7 +66,7 @@ def get_augmentations(augmentation, p, input_shape):
         
     elif augmentation == 'horizontal_flip':
         augmentations = Compose([
-                HorizontalFlip()
+                HorizontalFlip(p=.5)
             ], p=p)
         
     elif augmentation == 'strong_aug':
