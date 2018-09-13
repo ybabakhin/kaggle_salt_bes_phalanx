@@ -506,12 +506,12 @@ def unet_resnet_152(input_shape):
     conv5 = resnet_base.get_layer("relu1").output
 
     up6 = concatenate([UpSampling2D()(conv5), conv4], axis=-1)
-    conv6 = conv_block_simple(up6, 256, "conv6_1")
-    conv6 = conv_block_simple(conv6, 256, "conv6_2")
+    conv6 = conv_block_simple(up6, 512, "conv6_1")
+    conv6 = conv_block_simple(conv6, 512, "conv6_2")
 
     up7 = concatenate([UpSampling2D()(conv6), conv3], axis=-1)
-    conv7 = conv_block_simple(up7, 192, "conv7_1")
-    conv7 = conv_block_simple(conv7, 192, "conv7_2")
+    conv7 = conv_block_simple(up7, 256, "conv7_1")
+    conv7 = conv_block_simple(conv7, 256, "conv7_2")
 
     up8 = concatenate([UpSampling2D()(conv7), conv2], axis=-1)
     conv8 = conv_block_simple(up8, 128, "conv8_1")
@@ -525,7 +525,7 @@ def unet_resnet_152(input_shape):
     conv10 = conv_block_simple(up10, 32, "conv10_1")
     conv10 = conv_block_simple(conv10, 32, "conv10_2")
     
-    conv10 = SpatialDropout2D(0.4)(conv10)
+    conv10 = SpatialDropout2D(0.2)(conv10)
     x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(conv10)
     model = Model(resnet_base.input, x)
     return model

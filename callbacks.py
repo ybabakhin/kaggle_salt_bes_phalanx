@@ -10,6 +10,8 @@ import tensorflow as tf
 from keras.callbacks import Callback
 import matplotlib.pyplot as plt
 
+from snapshot import SnapshotCallbackBuilder
+
 class TensorBoardPrediction(Callback):
     """A TensorBoard callback to display samples, targets, and predictions.
 
@@ -131,36 +133,72 @@ def get_callback(callback, **kwargs):
         es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience, min_delta=0.0005)
         #es_callback = EarlyStopping(monitor="val_competitionMetric2", patience=args.early_stop_patience, mode='max')
         
-#         from keras.callbacks import LearningRateScheduler
-#         def step_decay_schedule(initial_lr=1e-3, decay_factor=0.75, step_size=10):
-#             '''
-#             Wrapper function to create a LearningRateScheduler with step decay schedule.
-#             '''
-#             def schedule(epoch):
-#                 return initial_lr if epoch <= 15 else initial_lr/4
-
-#             return LearningRateScheduler(schedule)
-
-#         lr_sched = step_decay_schedule(initial_lr=1e-4)
-
-
         callbacks = [es_callback]
+        
+    elif callback == 'scheduler':
+        
+        def step_decay_schedule(initial_lr=1e-3, decay_factor=0.75, step_size=10):
+            '''
+            Wrapper function to create a LearningRateScheduler with step decay schedule.
+            '''
+            def schedule(epoch):
+                
+                # Train 200
+#                 if epoch <= 15:
+#                     return initial_lr
+#                 elif epoch <= 15+40:
+#                     return initial_lr/2
+#                 elif epoch <= 15+40+60:
+#                     return initial_lr/10
+#                 else:
+#                     return initial_lr/20
+                
+                # Train 150
+#                 if epoch <= 15:
+#                     return initial_lr
+#                 elif epoch <= 15+40:
+#                     return initial_lr/2
+#                 elif epoch <= 15+40+40:
+#                     return initial_lr/10
+#                 else:
+#                     return initial_lr/20
+                
+                # Finetune
+                if epoch <= 15:
+                    return initial_lr/10
+                elif epoch <= 15+15:
+                    return initial_lr/20
+                else:
+                    return initial_lr/100
+
+            return LearningRateScheduler(schedule)
+
+        lr_sched = step_decay_schedule(initial_lr=1e-4)
+
+
+        callbacks = [lr_sched]
+
 
     elif callback == 'reduce_lr':
-        es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience)
+        es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience, mode='min', min_delta=0.0005)
         #es_callback = EarlyStopping(monitor="val_competitionMetric2", patience=args.early_stop_patience, mode='max')
         reduce_lr = ReduceLROnPlateau(factor=args.reduce_lr_factor, patience=args.reduce_lr_patience,
-                                      min_lr=args.reduce_lr_min, verbose=1)
+                                      min_lr=args.reduce_lr_min, verbose=1,mode='min')
 #         reduce_lr = ReduceLROnPlateau(monitor='val_competitionMetric2',factor=args.reduce_lr_factor, patience=args.reduce_lr_patience,
 #                                       min_lr=args.reduce_lr_min, verbose=1, mode='max')
         callbacks = [es_callback, reduce_lr]
 
     elif callback == 'cyclic_lr':
-        es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience)
+        es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience, min_delta=0.0005)
 
         # Cyclic LR
-        clr_triangular = CyclicLR(mode='triangular2', base_lr=args.learning_rate/12, max_lr=args.learning_rate, step_size=800)
+        clr_triangular = CyclicLR(mode='triangular2', base_lr=args.learning_rate/16, max_lr=args.learning_rate/4, step_size=2000)
         callbacks = [es_callback, clr_triangular]
+        
+        
+    elif callback == 'snapshot':
+        snapshot = SnapshotCallbackBuilder(kwargs['weights_path'], args.epochs, 1, args.learning_rate)
+        callbacks = snapshot.get_callbacks(model_prefix='snapshot')
 
     else:
         ValueError("Unknown callback")

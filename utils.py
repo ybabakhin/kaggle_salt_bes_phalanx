@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import cv2
-from tqdm import tqdm_notebook
+from tqdm import tqdm_notebook, tqdm
 from collections import defaultdict
 
 from keras.layers import *
@@ -212,60 +212,58 @@ def classification_predict_test(model, preds_path, oof, ids, batch_size, thr=0.5
 
 def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', preprocess=None):
     num_images = ids.shape[0]
-    with poolcontext(processes=12) as pool:
-        rles = []
-        for start in tqdm_notebook(range(0, num_images, batch_size)):
-            end = min(start + batch_size, num_images)
+    rles = []
+    for start in tqdm(range(0, num_images, batch_size)):
+        end = min(start + batch_size, num_images)
 
-            augment_number_per_image = _get_augmentations_count(TTA)
-            #images = pool.map(partial(read_image_test, TTA=TTA, oof=oof, preprocess = preprocess), ids[start:end])
-            images = [read_image_test(x, TTA=TTA, oof=oof, preprocess = preprocess) for x in ids[start:end]]
-            images = [item for sublist in images for item in sublist]
+        augment_number_per_image = _get_augmentations_count(TTA)
+        images = [read_image_test(x, TTA=TTA, oof=oof, preprocess = preprocess) for x in ids[start:end]]
+        images = [item for sublist in images for item in sublist]
 
-            X = np.array([x for x in images])
-            preds = model.predict_on_batch(X)
+        X = np.array([x for x in images])
+        preds = model.predict_on_batch(X)
 
-            total = 0
-            for idx in range(end - start):
-                part = []
-                for aug in range(augment_number_per_image):
+        total = 0
+        for idx in range(end - start):
+            part = []
+            for aug in range(augment_number_per_image):
 
-                    # Crops prediction
+                # Crops prediction
 #                     mask_zeroes = np.zeros((args.initial_size,args.initial_size,1))
 #                     mask_zeroes_mult = np.zeros((args.initial_size,args.initial_size,1))
-                    
+
 #                     mask_zeroes[:args.input_size,:args.input_size,:] += preds[total]
 #                     mask_zeroes[-args.input_size:,-args.input_size:,:] += preds[total+1]
 #                     mask_zeroes[:args.input_size,-args.input_size:,:] += preds[total+2]
 #                     mask_zeroes[-args.input_size:,:args.input_size,:] += preds[total+3]
-                    
+
 #                     mask_zeroes_mult[:args.input_size,:args.input_size,:] += 1
 #                     mask_zeroes_mult[-args.input_size:,-args.input_size:,:] += 1
 #                     mask_zeroes_mult[:args.input_size,-args.input_size:,:] += 1
 #                     mask_zeroes_mult[-args.input_size:,:args.input_size,:] += 1
-                    
+
 #                     prob = mask_zeroes/mask_zeroes_mult
 
-                    augmentation = CenterCrop(height = args.resize_size, width = args.resize_size, p = 1.0)
-                    data = {"image": preds[total]}
-                    prob = augmentation(**data)["image"]
-                    prob = cv2.resize(prob, (args.initial_size,args.initial_size))
-                    
-                    if aug == 0:
-                        pass
-                    elif aug == 1:
-                        augmentation = HorizontalFlip(p=1)
-                        data = {'image': prob}
-                        prob = augmentation(**data)['image']
-                    part.append(prob)
-                    total += 1
-                part = np.mean(np.array(part), axis=0)
-                cv2.imwrite(os.path.join(preds_path, str(ids[start + idx]) + '.png'), np.array(part * 255, np.uint8))
-                mask = part > thr
-                rle = RLenc(mask)
-                rles.append(rle)
+                augmentation = CenterCrop(height = args.resize_size, width = args.resize_size, p = 1.0)
+                data = {"image": preds[total]}
+                prob = augmentation(**data)["image"]
+                prob = cv2.resize(prob, (args.initial_size, args.initial_size))
 
-        return rles
+                if aug == 0:
+                    pass
+                elif aug == 1:
+                    augmentation = HorizontalFlip(p=1)
+                    data = {'image': prob}
+                    prob = augmentation(**data)['image']
+                part.append(prob)
+                total += 1
+            part = np.mean(np.array(part), axis=0)
+            cv2.imwrite(os.path.join(preds_path, str(ids[start + idx]) + '.png'), np.array(part * 255, np.uint8))
+            mask = part > thr
+            rle = RLenc(mask)
+            rles.append(rle)
+
+    return rles
 
 
 def ensemble(model_dirs, folds, ids, thr, classification):
@@ -277,7 +275,7 @@ def ensemble(model_dirs, folds, ids, thr, classification):
                   '3':pd.read_csv(os.path.join(classification,'fold_3/probs_test_fold_3.csv')),
                   '4':pd.read_csv(os.path.join(classification,'fold_4/probs_test_fold_4.csv'))}
                     
-    for img_id in tqdm_notebook(ids):
+    for img_id in tqdm(ids):
         preds = []
         for d in model_dirs:
             pred_folds = []
@@ -314,10 +312,10 @@ def ensemble(model_dirs, folds, ids, thr, classification):
         rles.append(rle)
     return rles
 
-def evaluate(model_dirs, ids, thr, classification):
+def evaluate_exp(model_dirs, ids, thr, classification, low_value, pixels, del_pixels):
     metrics = defaultdict(list)
 
-    for img_id in tqdm_notebook(ids):
+    for img_id in tqdm(ids):
         preds = []
         for d in model_dirs:
             path = os.path.join(d, 'oof')
@@ -337,8 +335,7 @@ def evaluate(model_dirs, ids, thr, classification):
         true_mask = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
         true_mask = np.array(true_mask / 255, np.float32)
         
-        # https://docs.opencv.org/3.1.0/d4/d13/tutorial_py_filtering.html
-        # final_pred = cv2.blur(final_pred,(11,11))
+
         
         if classification != '':
             tt = pd.read_csv(os.path.join(classification,'probs_oof.csv'))
@@ -347,10 +344,75 @@ def evaluate(model_dirs, ids, thr, classification):
                 final_pred = np.zeros(mask.shape)
             #final_pred*=prob
         
+        # https://docs.opencv.org/3.1.0/d4/d13/tutorial_py_filtering.html
+#         final_pred = cv2.blur(final_pred,(2,2))
+        
+        thr_mask_1 = np.zeros((101,101))
+        thr_mask_1+=thr
+        thr_mask_2 = np.zeros((101,101))
+        thr_mask_2+=thr
+        for row, const in enumerate(np.linspace(low_value, thr, pixels)):
+            thr_mask_1[row, :pixels] = const
+            thr_mask_1[row, -pixels:] = const
+            thr_mask_1[-row, -pixels:] = const
+            thr_mask_1[-row, :pixels] = const
+            thr_mask_2[:pixels, row] = const
+            thr_mask_2[-pixels:, row] = const
+            thr_mask_2[-pixels:, -row] = const
+            thr_mask_2[:pixels, -row] = const
+        thr_mask = (thr_mask_1+thr_mask_2)/2
+    
+        final_pred = final_pred > thr_mask
+
+        num_of_pixel_in_mask = final_pred.sum()
+        if num_of_pixel_in_mask <= del_pixels:
+            final_pred = np.zeros(mask.shape)
+        
+        metrics['iout'].append(iou_metric(true_mask, final_pred))
+        metrics['dice'].append(dice_coef_np(true_mask, final_pred))
+        metrics['jacard'].append(jacard_coef_np(true_mask, final_pred))
+
+    return metrics
+
+def evaluate(model_dirs, ids, thr, classification):
+    metrics = defaultdict(list)
+
+    for img_id in tqdm(ids):
+        preds = []
+        for d in model_dirs:
+            path = os.path.join(d, 'oof')
+            mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
+            
+            img = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
+            if np.unique(img).shape[0] == 1:
+                preds.append(np.zeros(mask.shape))
+            else:
+                preds.append(np.array(mask / 255, np.float32))
+            
+            
+        
+        # final_pred = scipy.stats.mstats.gmean(np.array(preds), axis=0)
+        final_pred = np.mean(np.array(preds), axis=0)
+
+        true_mask = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
+        true_mask = np.array(true_mask / 255, np.float32)
+        
+
+        
+        if classification != '':
+            tt = pd.read_csv(os.path.join(classification,'probs_oof.csv'))
+            prob = tt[tt.id==img_id].prob.values[0]
+            if prob < 0.5:
+                final_pred = np.zeros(mask.shape)
+            #final_pred*=prob
+        
+        # https://docs.opencv.org/3.1.0/d4/d13/tutorial_py_filtering.html
+#         final_pred = cv2.blur(final_pred,(2,2))
+        
         final_pred = final_pred > thr
 
 #         num_of_pixel_in_mask = final_pred.sum()
-#         if num_of_pixel_in_mask <= 10:
+#         if num_of_pixel_in_mask <= 30:
 #             final_pred = np.zeros(mask.shape)
         
         metrics['iout'].append(iou_metric(true_mask, final_pred))

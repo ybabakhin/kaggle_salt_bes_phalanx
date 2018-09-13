@@ -51,6 +51,10 @@ def jacard_coef_loss_bce(y_true, y_pred, jacard=0.5, bce=0.5):
     return binary_crossentropy(y_true, y_pred) * bce + jacard_coef_loss(y_true, y_pred) * jacard
 
 
+def jacard_dice_bce_loss(y_true, y_pred, jacard=0.5, bce=0.3, dice=0.2):
+    return binary_crossentropy(y_true, y_pred) * bce + jacard_coef_loss(y_true, y_pred) * jacard + dice_coef_loss(y_true, y_pred) * dice
+
+
 def make_loss(loss_name):
     if loss_name == 'crossentropy':
         return K.binary_crossentropy
@@ -66,14 +70,16 @@ def make_loss(loss_name):
     elif loss_name == 'bce_dice':
         def loss(y, p):
             return dice_coef_loss_bce(y, p, dice=0.5, bce=0.5)
-
         return loss
 
     elif loss_name == 'lovasz':
+        return lovasz_loss
+    
+    elif loss_name == 'bce_jacard_dice':
         def loss(y, p):
-            return lovasz_loss(y, p)
-
+            return jacard_dice_bce_loss(y, p, jacard=0.5, bce=0.3, dice=0.2)
         return loss
+    
     else:
         ValueError("Unknown loss")
 
