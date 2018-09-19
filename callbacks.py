@@ -197,8 +197,8 @@ def get_callback(callback, **kwargs):
         
         
     elif callback == 'snapshot':
-        snapshot = SnapshotCallbackBuilder(kwargs['weights_path'], args.epochs, 1, args.learning_rate)
-        callbacks = snapshot.get_callbacks(model_prefix='snapshot')
+        snapshot = SnapshotCallbackBuilder(kwargs['weights_path'], args.epochs, args.n_snapshots, args.learning_rate)
+        callbacks = snapshot.get_callbacks(model_prefix='snapshot', fold=kwargs['fold'])
 
     else:
         ValueError("Unknown callback")
@@ -209,7 +209,7 @@ def get_callback(callback, **kwargs):
 #     mc_callback = ModelCheckpoint(kwargs['weights_path'], monitor='val_loss', verbose=0, save_best_only=True,
 #                                   save_weights_only=True, mode='auto', period=1)
     
-    mc_callback = ModelCheckpoint(kwargs['weights_path'], monitor='val_Kaggle_IoU_Precision', verbose=0, save_best_only=True,
+    mc_callback = ModelCheckpoint(kwargs['weights_path'], monitor='val_lb_metric', verbose=0, save_best_only=True,
                                   save_weights_only=True, mode='max', period=1)
     
     

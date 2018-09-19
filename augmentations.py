@@ -36,46 +36,6 @@ def get_augmentations(augmentation, p, input_shape):
                 ShiftScaleRotate(shift_limit=0.1625, scale_limit=0.6, rotate_limit=0, p=0.7)
             ], p=p)
         
-    elif augmentation == 'valid_plus_v1':
-        augmentations = Compose([
-                HorizontalFlip(p=.5),
-                RandomBrightness(p=.2,limit=0.2),
-                RandomContrast(p=.1,limit=0.2),
-                ShiftScaleRotate(shift_limit=0.1, scale_limit=0.6, rotate_limit=0, p=0.7)
-            ], p=p)
-        
-    elif augmentation == 'valid_plus_v2':
-        augmentations = Compose([
-                HorizontalFlip(p=.5),
-                RandomBrightness(p=.2,limit=0.2),
-                RandomContrast(p=.1,limit=0.2),
-                ShiftScaleRotate(shift_limit=0.2, scale_limit=0.6, rotate_limit=0, p=0.7)
-            ], p=p)
-        
-    elif augmentation == 'valid_plus_v3':
-        augmentations = Compose([
-                HorizontalFlip(p=.5),
-                RandomBrightness(p=.2,limit=0.2),
-                RandomContrast(p=.1,limit=0.2),
-                ShiftScaleRotate(shift_limit=0.1625, scale_limit=0.6, rotate_limit=5, p=0.7)
-            ], p=p)
-        
-    elif augmentation == 'valid_plus_v4':
-        augmentations = Compose([
-                HorizontalFlip(p=.5),
-                RandomBrightness(p=.2,limit=0.2),
-                RandomContrast(p=.1,limit=0.2),
-                ShiftScaleRotate(shift_limit=0.1625, scale_limit=0.4, rotate_limit=0, p=0.7)
-            ], p=p)
-        
-    elif augmentation == 'valid_plus_v5':
-        augmentations = Compose([
-                HorizontalFlip(p=.5),
-                RandomBrightness(p=.2,limit=0.2),
-                RandomContrast(p=.1,limit=0.2),
-                ShiftScaleRotate(shift_limit=0.1625, scale_limit=0.8, rotate_limit=0, p=0.7)
-            ], p=p)
-        
 #     elif augmentation == 'valid_plus_exp':
 #         augmentations = Compose([
 #                 HorizontalFlip(p=.5),

@@ -371,6 +371,102 @@ def unet_resnet_50(input_shape):
     model = Model(resnet_base.input, x)
     return model
 
+
+def unet_resnet_50_do1(input_shape):
+    from models.segmentation_models.segmentation_models import Unet
+    
+    resnet_base = Unet(backbone_name='resnet50',
+         input_shape=input_shape,
+         input_tensor=None,
+         encoder_weights='imagenet',
+         freeze_encoder=False,
+         skip_connections='default',
+         #skip_connections=('stage4_unit1_relu2', 'stage3_unit1_relu2', 'stage2_unit1_relu2', 'relu0', 'data'),
+         decoder_block_type='upsampling',
+         decoder_filters=(256,128,64,32,16),
+         decoder_use_batchnorm=True,
+         n_upsample_blocks=5,
+         upsample_rates=(2,2,2,2,2),
+         classes=1,
+         activation='sigmoid')
+    
+    x = SpatialDropout2D(0.2)(resnet_base.output)
+    x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(x)
+    #x = Conv2D(1, (1, 1), name="prediction")(x)
+    
+    model = Model(resnet_base.input, x)
+    
+    
+    return model
+
+def unet_resnet_50_do3(input_shape):
+    from models.segmentation_models.segmentation_models import Unet
+    
+    resnet_base = Unet(backbone_name='resnet152',
+         input_shape=input_shape,
+         input_tensor=None,
+         encoder_weights='imagenet',
+         freeze_encoder=False,
+         skip_connections='default',
+         decoder_block_type='upsampling',
+         decoder_filters=(256,128,64,32,16),
+         decoder_use_batchnorm=True,
+         n_upsample_blocks=5,
+         upsample_rates=(2,2,2,2,2),
+         classes=1,
+         activation='sigmoid')
+    
+    x = SpatialDropout2D(0.2)(resnet_base.output)
+    x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(x)
+    
+    model = Model(resnet_base.input, x)
+    
+    return model
+
+
+def unet_resnet_50_do2(input_shape):
+    resnet_base = ResNet50(input_shape, weights='imagenet', include_top=False)
+    
+    for l in resnet_base.layers:
+        l.trainable = True
+    
+    conv1 = resnet_base.get_layer("relu0").output
+    conv2 = resnet_base.get_layer("stage2_unit1_relu2").output
+    conv3 = resnet_base.get_layer("stage3_unit1_relu2").output
+    conv4 = resnet_base.get_layer("stage4_unit1_relu2").output
+    conv5 = resnet_base.get_layer("relu1").output
+
+    up6 = concatenate([UpSampling2D()(conv5), conv4], axis=-1)
+    conv6 = conv_block_simple(up6, 256, "conv6_1")
+    conv6 = conv_block_simple(conv6, 256, "conv6_2")
+
+    up7 = concatenate([UpSampling2D()(conv6), conv3], axis=-1)
+    conv7 = conv_block_simple(up7, 128, "conv7_1")
+    conv7 = conv_block_simple(conv7, 128, "conv7_2")
+
+    up8 = concatenate([UpSampling2D()(conv7), conv2], axis=-1)
+    conv8 = conv_block_simple(up8, 64, "conv8_1")
+    conv8 = conv_block_simple(conv8, 64, "conv8_2")
+
+    up9 = concatenate([UpSampling2D()(conv8), conv1], axis=-1)
+    conv9 = conv_block_simple(up9, 32, "conv9_1")
+    conv9 = conv_block_simple(conv9, 32, "conv9_2")
+
+    # up10 = concatenate([UpSampling2D()(conv9), resnet_base.input], axis=-1)
+    up10 = UpSampling2D()(conv9)
+    conv10 = conv_block_simple(up10, 16, "conv10_1")
+    conv10 = conv_block_simple(conv10, 16, "conv10_2")
+    
+    
+#     conv10 = concatenate([conv10, UpSampling2D(size=(2,2))(conv9), UpSampling2D(size=(4,4))(conv8),
+#                          UpSampling2D(size=(8,8))(conv7),UpSampling2D(size=(16,16))(conv6)], axis=-1)
+    
+    conv10 = SpatialDropout2D(0.2)(conv10)
+    x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(conv10)
+    model = Model(resnet_base.input, x)
+    return model
+
+
 def unet_resnet_101(input_shape):
     resnet_base = ResNet101(input_shape, weights='imagenet', include_top=False)
     
@@ -506,12 +602,12 @@ def unet_resnet_152(input_shape):
     conv5 = resnet_base.get_layer("relu1").output
 
     up6 = concatenate([UpSampling2D()(conv5), conv4], axis=-1)
-    conv6 = conv_block_simple(up6, 512, "conv6_1")
-    conv6 = conv_block_simple(conv6, 512, "conv6_2")
+    conv6 = conv_block_simple(up6, 256, "conv6_1")
+    conv6 = conv_block_simple(conv6, 256, "conv6_2")
 
     up7 = concatenate([UpSampling2D()(conv6), conv3], axis=-1)
-    conv7 = conv_block_simple(up7, 256, "conv7_1")
-    conv7 = conv_block_simple(conv7, 256, "conv7_2")
+    conv7 = conv_block_simple(up7, 192, "conv7_1")
+    conv7 = conv_block_simple(conv7, 192, "conv7_2")
 
     up8 = concatenate([UpSampling2D()(conv7), conv2], axis=-1)
     conv8 = conv_block_simple(up8, 128, "conv8_1")
@@ -527,6 +623,7 @@ def unet_resnet_152(input_shape):
     
     conv10 = SpatialDropout2D(0.2)(conv10)
     x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(conv10)
+    #x = Conv2D(1, (1, 1), name="prediction")(conv10)
     model = Model(resnet_base.input, x)
     return model
 

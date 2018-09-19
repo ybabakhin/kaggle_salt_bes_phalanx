@@ -11,7 +11,6 @@ from losses import *
 
 
 def main():
-    print(args.alias)
     train = pd.read_csv(os.path.join(args.data_root, 'train_proc_v2.csv'))
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
@@ -20,7 +19,7 @@ def main():
     for fold in folds:
         
         K.clear_session()
-        print('***************************** FOLD {} *****************************'.format(fold))
+        # print('***************************** FOLD {} *****************************'.format(fold))
 
         ids_valid = train[train.fold == fold].id.values
 
@@ -47,6 +46,8 @@ def main():
 
         
         res = evaluate([MODEL_PATH], train[train.fold.isin([fold])].id.values, 0.5, classification='')
+        
+        print(args.prediction_weights.format(fold))
         print("{} / {} / {}".format(np.round(np.mean(res['iout']),5),np.round(np.mean(res['dice']),5),np.round(np.mean(res['jacard']),5)))
 
 

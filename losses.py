@@ -72,8 +72,13 @@ def make_loss(loss_name):
             return dice_coef_loss_bce(y, p, dice=0.5, bce=0.5)
         return loss
 
+#     elif loss_name == 'lovasz':
+#         return lovasz_loss
+
     elif loss_name == 'lovasz':
-        return lovasz_loss
+        def loss(y, p):
+            return lovasz_hinge(p, y, per_image=True, ignore=None)
+        return loss
     
     elif loss_name == 'bce_jacard_dice':
         def loss(y, p):
@@ -237,6 +242,9 @@ def lovasz_hinge_flat(logits, labels):
         gt_sorted = tf.gather(labelsf, perm)
         grad = lovasz_grad(gt_sorted)
         loss = tf.tensordot(tf.nn.relu(errors_sorted), tf.stop_gradient(grad), 1, name="loss_non_void")
+        # ELU + 1?!!?!
+        # per_image True or False?!
+        #loss = tf.tensordot(tf.nn.elu(errors_sorted)+1., tf.stop_gradient(grad), 1, name="loss_non_void")
         return loss
 
     # deal with the void prediction case (only void pixels)

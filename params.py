@@ -4,6 +4,7 @@ import sys
 parser = argparse.ArgumentParser()
 arg = parser.add_argument
 arg('--epochs', type=int, default=50)
+arg('--n_snapshots', type=int, default=1)
 arg('--fold', default='0')
 arg('--pretrain_weights')
 arg('--prediction_weights', default='fold_{}.hdf5')

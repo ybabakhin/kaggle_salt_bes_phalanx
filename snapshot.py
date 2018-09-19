@@ -19,17 +19,19 @@ class SnapshotModelCheckpoint(Callback):
         fn_prefix: prefix for the filename of the weights.
     """
 
-    def __init__(self, nb_epochs, nb_snapshots, fn_prefix='Model'):
+    def __init__(self, nb_epochs, nb_snapshots, fn_prefix, fold):
         super(SnapshotModelCheckpoint, self).__init__()
 
         self.check = nb_epochs // nb_snapshots
         self.fn_prefix = fn_prefix
+        self.fold = fold
 
     def on_epoch_end(self, epoch, logs={}):
         if epoch != 0 and (epoch + 1) % self.check == 0:
-            filepath = self.fn_prefix + "-%d.h5" % ((epoch + 1) // self.check)
+            filepath = self.fn_prefix + "_{snap}_fold_{fold}.hdf5".format(snap=((epoch + 1) // self.check), fold=self.fold)
             self.model.save_weights(filepath, overwrite=True)
             #print("Saved snapshot at weights/%s_%d.h5" % (self.fn_prefix, epoch))
+
 
 
 class SnapshotCallbackBuilder:
@@ -54,7 +56,7 @@ class SnapshotCallbackBuilder:
         self.alpha_zero = init_lr
         self.weights_path = '/'.join(weights_path.split('/')[:-1])
 
-    def get_callbacks(self, model_prefix='Model'):
+    def get_callbacks(self, model_prefix='Model', fold=0):
         """
         Creates a list of callbacks that can be used during training to create a
         snapshot ensemble of the model.
@@ -70,7 +72,7 @@ class SnapshotCallbackBuilder:
 
         callback_list = [
                          callbacks.LearningRateScheduler(schedule=self._cosine_anneal_schedule),
-                         SnapshotModelCheckpoint(self.T, self.M, fn_prefix=os.path.join(self.weights_path,'%s' % model_prefix))]
+                         SnapshotModelCheckpoint(self.T, self.M, os.path.join(self.weights_path, model_prefix), fold)]
 
         return callback_list
 

@@ -1,3 +1,8 @@
+# import tensorflow as tf
+# config = tf.ConfigProto()
+# config.gpu_options.allow_growth = True
+# session = tf.Session(config=config)
+
 import pandas as pd
 import numpy as np
 import os
@@ -14,6 +19,15 @@ from losses import *
 
 
 def main():
+    
+#     import tensorflow as tf
+#     from keras.backend.tensorflow_backend import set_session
+#     config = tf.ConfigProto()
+    
+#     config.gpu_options.per_process_gpu_memory_fraction = 0.85
+#     set_session(tf.Session(config=config))
+
+    
     train = pd.read_csv(os.path.join(args.data_root, 'train_proc_v2.csv'))
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
@@ -44,8 +58,11 @@ def main():
         model, preprocess = get_model(args.network, input_shape=(args.input_size, args.input_size, 3), train_base=True)
         print(model.summary())
         
+        def lb_metric(y_true, y_pred):
+            return Kaggle_IoU_Precision(y_true, y_pred, threshold = 0 if args.loss_function == 'lovasz' else 0.5)
+        
         model.compile(optimizer=RMSprop(lr=args.learning_rate), loss=make_loss(args.loss_function),
-                      metrics=[Kaggle_IoU_Precision])
+                      metrics=[lb_metric])
 
         if args.pretrain_weights is None:
             print('No weights passed, training from scratch')
