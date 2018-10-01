@@ -23,7 +23,9 @@ def main():
         # Initialize Model
         weights_path = os.path.join(MODEL_PATH, args.prediction_weights.format(fold))
 
-        model, preprocess = get_model(args.network, input_shape=(args.input_size, args.input_size, 3), train_base=True)
+        model, preprocess = get_model(args.network,
+                                      input_shape=(args.input_size, args.input_size, 3),
+                                     freeze_encoder=args.freeze_encoder)
         model.compile(optimizer=RMSprop(lr=args.learning_rate), loss=make_loss(args.loss_function),
                       metrics=[Kaggle_IoU_Precision])
 

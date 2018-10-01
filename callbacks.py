@@ -180,12 +180,10 @@ def get_callback(callback, **kwargs):
 
 
     elif callback == 'reduce_lr':
-        es_callback = EarlyStopping(monitor="val_loss", patience=args.early_stop_patience, mode='min', min_delta=0.0005)
-        #es_callback = EarlyStopping(monitor="val_competitionMetric2", patience=args.early_stop_patience, mode='max')
-        reduce_lr = ReduceLROnPlateau(factor=args.reduce_lr_factor, patience=args.reduce_lr_patience,
-                                      min_lr=args.reduce_lr_min, verbose=1,mode='min')
-#         reduce_lr = ReduceLROnPlateau(monitor='val_competitionMetric2',factor=args.reduce_lr_factor, patience=args.reduce_lr_patience,
-#                                       min_lr=args.reduce_lr_min, verbose=1, mode='max')
+        es_callback = EarlyStopping(monitor="val_lb_metric", patience=args.early_stop_patience, mode='max')
+        reduce_lr = ReduceLROnPlateau(monitor='val_lb_metric',factor=args.reduce_lr_factor, patience=args.reduce_lr_patience,
+                                      min_lr=args.reduce_lr_min, verbose=1,mode='max')
+
         callbacks = [es_callback, reduce_lr]
 
     elif callback == 'cyclic_lr':
@@ -203,18 +201,13 @@ def get_callback(callback, **kwargs):
     else:
         ValueError("Unknown callback")
 
-#     mc_callback = ModelCheckpoint(kwargs['weights_path']+'.{epoch:02d}-{val_loss:.2f}-{val_competitionMetric2:.4f}-{val_Kaggle_IoU_Precision:.4f}.hdf5', monitor='val_loss', verbose=0, save_best_only=False,
-#                                   save_weights_only=True, mode='auto', period=1)
-
-#     mc_callback = ModelCheckpoint(kwargs['weights_path'], monitor='val_loss', verbose=0, save_best_only=True,
-#                                   save_weights_only=True, mode='auto', period=1)
-    
-    mc_callback = ModelCheckpoint(kwargs['weights_path'], monitor='val_lb_metric', verbose=0, save_best_only=True,
+    mc_callback_best = ModelCheckpoint(kwargs['weights_path'], monitor='val_lb_metric', verbose=0, save_best_only=True,
                                   save_weights_only=True, mode='max', period=1)
+    callbacks.append(mc_callback_best)
     
-    
-    
-    callbacks.append(mc_callback)
+#     mc_callback_all = ModelCheckpoint(kwargs['weights_path']+'.{epoch:03d}-{val_loss:.5f}-{val_lb_metric:.5f}.hdf5', monitor='val_lb_metric', verbose=0, save_best_only=False,
+#                                   save_weights_only=True, mode='max', period=1)
+#     callbacks.append(mc_callback_all)
     
     tensorboard_dir = os.path.join(args.models_dir,'logs/','_'.join(kwargs['weights_path'].split('/')[-2:]))
     tensorboard_callback = TensorBoard(log_dir=tensorboard_dir)

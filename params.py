@@ -21,13 +21,14 @@ arg('--augmentation_prob', type=float, default=1.0)
 arg('--network', default='unet_resnet_50')
 arg('--alias', default='_exp_0_160_192_snapshot_50_epochs')
 arg('--callback', default='snapshot')
+arg('--freeze_encoder', type=int, default=0)
 
-arg('--models_dir', default='/home/branding_images/salt/')
+arg('--models_dir', default='/home/RnD/babakhin.y/salt/')
 arg('--data_root', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/')
-arg('--images_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train/images')
-arg('--masks_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train/masks')
-arg('--test_folder', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/test/images')
-arg('--folds_csv', default='data/train_proc_v2.csv')
+arg('--images_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train/images/')
+arg('--masks_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train/masks/')
+arg('--test_folder', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/test/images/')
+arg('--folds_csv', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train_proc_v2_gr.csv')
 arg('--out_root_dir', default='submissions/')
 
 arg('--initial_size', type=int, default=101)
@@ -39,4 +40,3 @@ arg('--reduce_lr_min',  type=float, default=0.000001)
 
 # sys.argv = ['foo']
 args = parser.parse_args()
-

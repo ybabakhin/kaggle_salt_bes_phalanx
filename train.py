@@ -8,7 +8,7 @@ import numpy as np
 import os
 from keras import backend as K
 import gc
-from keras.optimizers import RMSprop
+from keras.optimizers import RMSprop, Adam, SGD
 from utils import predict_test, evaluate, ensemble, ThreadsafeIter, classification_predict_test
 from datasets.generators import SegmentationDataGenerator, ClassificationDataGenerator
 from params import args
@@ -28,7 +28,7 @@ def main():
 #     set_session(tf.Session(config=config))
 
     
-    train = pd.read_csv(os.path.join(args.data_root, 'train_proc_v2.csv'))
+    train = pd.read_csv(args.folds_csv)
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
     
@@ -39,15 +39,17 @@ def main():
 
         if fold == 0:
             if os.path.isdir(MODEL_PATH):
-                raise ValueError('Such Model already exists')
+                print('Such Model already exists')
+                # raise ValueError('Such Model already exists')
             os.system("mkdir {}".format(MODEL_PATH))
             os.system("cp train_all.sh {}".format(MODEL_PATH))
 
         df_train = train[train.fold != fold].copy().reset_index(drop=True)
         df_valid = train[train.fold == fold].copy().reset_index(drop=True)
 
+        # ids_train, ids_valid = df_train.id.values, df_valid.id.values
         ids_train, ids_valid = df_train[df_train.unique_pixels > 1].id.values, df_valid[df_valid.unique_pixels > 1].id.values
-
+        
         print('Training on {} samples'.format(ids_train.shape[0]))
         print('Validating on {} samples'.format(ids_valid.shape[0]))
 
@@ -55,7 +57,9 @@ def main():
         weights_path = os.path.join(MODEL_PATH, 'fold_{fold}.hdf5'.format(fold=fold))
         print(weights_path.split('/')[-2:])
 
-        model, preprocess = get_model(args.network, input_shape=(args.input_size, args.input_size, 3), train_base=True)
+        model, preprocess = get_model(args.network,
+                                      input_shape=(args.input_size, args.input_size, 3),
+                                      freeze_encoder=args.freeze_encoder)
         print(model.summary())
         
         def lb_metric(y_true, y_pred):

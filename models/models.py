@@ -1,4 +1,4 @@
-from models.models_zoo import simple_unet, simple_unet_v2, unet_resnet_50_vgg, unet_inception_resnet_v2, unet_mobilenet, unet_vgg_16, unet_resnet_18, unet_resnet_34, unet_resnet_50, unet_resnet_101, unet_resnet_152, unet_resnet_101_do,unet_resnet_101_do_capacity,resnet_34_classification, unet_resnet_34_do, unet_resnet_50_do1, unet_resnet_50_do2,unet_resnet_50_do3
+from models.models_zoo import simple_unet, simple_unet_v2, unet_resnet_50_vgg, unet_inception_resnet_v2, unet_mobilenet, unet_vgg_16, unet_resnet_18, unet_resnet_34, unet_resnet_50, unet_resnet_101, unet_resnet_152, unet_resnet_152_old, unet_resnet_101_do,unet_resnet_101_do_capacity,resnet_34_classification, unet_resnet_50_lovasz, unet_resnet_34_lovasz, unet_resnext_50, unet_resnext_50_lovasz, unet_resnext_101, unet_resnext_101_lovasz
 from models.unets import resnet18_fpn, resnet34_fpn, resnet152_fpn, resnet101_fpn, resnet50_fpn, xception_fpn,  densenet_fpn, inception_resnet_v2_fpn, resnet50_fpn_modified
 
 from keras.applications.resnet50 import preprocess_input as preprocess_input_resnet50
@@ -16,7 +16,7 @@ from keras.applications.vgg16 import preprocess_input as preprocess_input_vgg
 # conv4 = resnet_base.get_layer("activation_27").output # Intermediate activation
 # conv5 = resnet_base.get_layer("activation_33").output  # Last activation
 
-def get_model(network, input_shape, train_base=True):
+def get_model(network, input_shape, freeze_encoder):
     
     if network == 'simple_unet':
         def preprocess(img):
@@ -46,24 +46,36 @@ def get_model(network, input_shape, train_base=True):
         return model, preprocess_input_resnet_18_34
     
     elif network == 'unet_resnet_34':
-        model = unet_resnet_34(input_shape)
-        return model, preprocess_input_resnet_18_34
-    elif network == 'unet_resnet_34_do':
-        model = unet_resnet_34_do(input_shape)
+        model = unet_resnet_34(input_shape,freeze_encoder)
         return model, preprocess_input_resnet_18_34
     
     
     elif network == 'unet_resnet_50':
-        model = unet_resnet_50(input_shape)
+        model = unet_resnet_50(input_shape,freeze_encoder)
         return model, preprocess_input_resnet_18_34
-    elif network == 'unet_resnet_50_do1':
-        model = unet_resnet_50_do1(input_shape)
+    
+    elif network == 'unet_resnext_50':
+        model = unet_resnext_50(input_shape,freeze_encoder)
         return model, preprocess_input_resnet_18_34
-    elif network == 'unet_resnet_50_do2':
-        model = unet_resnet_50_do2(input_shape)
+    elif network == 'unet_resnext_50_lovasz':
+        model = unet_resnext_50_lovasz(input_shape,freeze_encoder)
         return model, preprocess_input_resnet_18_34
-    elif network == 'unet_resnet_50_do3':
-        model = unet_resnet_50_do3(input_shape)
+    
+    
+    elif network == 'unet_resnext_101':
+        model = unet_resnext_101(input_shape,freeze_encoder)
+        return model, preprocess_input_resnet_18_34
+    elif network == 'unet_resnext_101_lovasz':
+        model = unet_resnext_101_lovasz(input_shape,freeze_encoder)
+        return model, preprocess_input_resnet_18_34
+    
+    
+    
+    elif network == 'unet_resnet_50_lovasz':
+        model = unet_resnet_50_lovasz(input_shape,freeze_encoder)
+        return model, preprocess_input_resnet_18_34
+    elif network == 'unet_resnet_34_lovasz':
+        model = unet_resnet_34_lovasz(input_shape,freeze_encoder)
         return model, preprocess_input_resnet_18_34
     
     elif network == 'unet_resnet_101':
@@ -79,7 +91,10 @@ def get_model(network, input_shape, train_base=True):
     
     
     elif network == 'unet_resnet_152':
-        model = unet_resnet_152(input_shape)
+        model = unet_resnet_152(input_shape,freeze_encoder)
+        return model, preprocess_input_resnet_18_34
+    elif network == 'unet_resnet_152_old':
+        model = unet_resnet_152_old(input_shape,freeze_encoder)
         return model, preprocess_input_resnet_18_34
     
 

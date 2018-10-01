@@ -2,7 +2,7 @@ from albumentations import (VerticalFlip,
                             HorizontalFlip, IAAPerspective, ShiftScaleRotate, CLAHE, RandomRotate90,
                             Transpose, ShiftScaleRotate, Blur, OpticalDistortion, GridDistortion, HueSaturationValue,
                             IAAAdditiveGaussianNoise, GaussNoise, MotionBlur, MedianBlur, IAAPiecewiseAffine,
-                            IAASharpen, IAAEmboss, RandomContrast, RandomBrightness, Flip, OneOf, Compose, ElasticTransform, RandomCrop
+                            IAASharpen, IAAEmboss, RandomContrast, RandomBrightness, Flip, OneOf, Compose, ElasticTransform, RandomCrop,Normalize
                             )
 
 def get_augmentations(augmentation, p, input_shape):

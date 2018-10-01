@@ -374,22 +374,21 @@ def evaluate_exp(model_dirs, ids, thr, classification, low_value, pixels, del_pi
 
     return metrics
 
-def evaluate(model_dirs, ids, thr, classification):
+def evaluate(model_dirs, ids, thr, classification, snapshots):
     metrics = defaultdict(list)
 
     for img_id in tqdm(ids):
         preds = []
         for d in model_dirs:
-            path = os.path.join(d, 'oof')
-            mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-            
-            img = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-            if np.unique(img).shape[0] == 1:
-                preds.append(np.zeros(mask.shape))
-            else:
-                preds.append(np.array(mask / 255, np.float32))
-            
-            
+            for snap in snapshots:
+                path = os.path.join(d, snap)
+                mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
+
+                img = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
+                if np.unique(img).shape[0] == 1:
+                    preds.append(np.zeros(mask.shape))
+                else:
+                    preds.append(np.array(mask / 255, np.float32))
         
         # final_pred = scipy.stats.mstats.gmean(np.array(preds), axis=0)
         final_pred = np.mean(np.array(preds), axis=0)

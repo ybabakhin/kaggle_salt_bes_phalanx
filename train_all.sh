@@ -1,50 +1,173 @@
-# python3 train.py \
-# --epochs 50 \
-# --n_snapshots 1 \
-# --fold 0 \
-# --learning_rate 0.0001 \
-# --input_size 224 \
-# --resize_size 192 \
-# --batch_size 24 \
-# --loss_function bce_jacard \
-# --callback snapshot \
-# --augmentation_name valid_plus \
-# --augmentation_prob 1.0 \
-# --network unet_resnet_50_do1 \
-# --alias _exp_0_192_224_snapshot_50_epochs_qubvel_auto_builder_fix_bn
-
-
-# python3 train.py \
-# --epochs 50 \
-# --n_snapshots 1 \
-# --fold 0 \
-# --learning_rate 0.0001 \
-# --input_size 224 \
-# --resize_size 192 \
-# --batch_size 24 \
-# --loss_function bce_jacard \
-# --callback snapshot \
-# --augmentation_name valid_plus \
-# --augmentation_prob 1.0 \
-# --network unet_resnet_50_do2 \
-# --alias _exp_0_192_224_snapshot_50_epochs_dec_capacity_hypercolumn
-
 
 python3 train.py \
---epochs 30 \
---pretrain_weights /home/branding_images/salt/unet_resnet_152_192_224_snapshot_100_epochs_bs_16/fold_{}.hdf5 \
---n_snapshots 1 \
---fold 4 \
+--epochs 80 \
+--pretrain_weights /home/RnD/babakhin.y/salt/unet_resnext_50_192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual/fold_{}.hdf5 \
+--n_snapshots 2 \
+--fold 0 \
 --learning_rate 0.00005 \
 --input_size 224 \
 --resize_size 192 \
---batch_size 16 \
+--batch_size 24 \
 --loss_function lovasz \
 --callback snapshot \
 --augmentation_name valid_plus \
 --augmentation_prob 1.0 \
---network unet_resnet_152 \
---alias _192_224_snapshot_100_epochs_bs_16_finetune_lovash_v1
+--network unet_resnext_50_lovasz \
+--alias _192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual_snapshots
+
+python3 train.py \
+--epochs 125 \
+--pretrain_weights /home/RnD/babakhin.y/salt/unet_resnext_50_192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual/fold_{}.hdf5 \
+--fold 0 \
+--learning_rate 0.0001 \
+--input_size 224 \
+--resize_size 192 \
+--batch_size 24 \
+--loss_function lovasz \
+--callback reduce_lr \
+--freeze_encoder 0 \
+--early_stop_patience 20 \
+--reduce_lr_factor 0.25 \
+--reduce_lr_patience 10 \
+--reduce_lr_min 0.00000625 \
+--augmentation_name valid_plus \
+--augmentation_prob 1.0 \
+--network unet_resnext_50_lovasz \
+--alias _192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual
+
+python3 train.py \
+--epochs 125 \
+--fold 0 \
+--learning_rate 0.0001 \
+--input_size 224 \
+--resize_size 192 \
+--batch_size 16 \
+--loss_function bce_dice \
+--callback reduce_lr \
+--freeze_encoder 0 \
+--early_stop_patience 20 \
+--reduce_lr_factor 0.25 \
+--reduce_lr_patience 10 \
+--reduce_lr_min 0.00000625 \
+--augmentation_name valid_plus \
+--augmentation_prob 1.0 \
+--network unet_resnext_101 \
+--alias _192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual
+
+python3 train.py \
+--epochs 125 \
+--pretrain_weights /home/RnD/babakhin.y/salt/unet_resnext_50_192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual/fold_{}.hdf5 \
+--fold 0 \
+--learning_rate 0.00005 \
+--input_size 224 \
+--resize_size 192 \
+--batch_size 24 \
+--loss_function lovasz \
+--callback reduce_lr \
+--freeze_encoder 0 \
+--early_stop_patience 15 \
+--reduce_lr_factor 0.5 \
+--reduce_lr_patience 7 \
+--reduce_lr_min 0.00000625 \
+--augmentation_name valid_plus \
+--augmentation_prob 1.0 \
+--network unet_resnext_50_lovasz \
+--alias _192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual_00005
+
+#**************************************************************
 
 
-# --pretrain_weights /home/branding_images/salt/unet_resnet_152_exp_0_202_256_scheduler_150_epochs/fold_{}.hdf5
+# python3 train.py \
+# --epochs 150 \
+# --fold 0 \
+# --learning_rate 0.0001 \
+# --input_size 224 \
+# --resize_size 192 \
+# --batch_size 32 \
+# --loss_function bce_dice \
+# --callback reduce_lr \
+# --freeze_encoder 0 \
+# --early_stop_patience 50 \
+# --reduce_lr_factor 0.25 \
+# --reduce_lr_patience 100 \
+# --reduce_lr_min 0.00000625 \
+# --augmentation_name valid_plus \
+# --augmentation_prob 1.0 \
+# --network unet_resnet_34 \
+# --alias _192_224_reduce_lr_smaller_decoder_bce_dice_csse_150_epochs
+
+
+# python3 train.py \
+# --epochs 125 \
+# --fold 0 \
+# --pretrain_weights /home/RnD/babakhin.y/salt/unet_resnet_34_192_224_reduce_lr_smaller_decoder_bce_dice_hypecolumn_csse/fold_{}.hdf5 \
+# --learning_rate 0.00005 \
+# --input_size 224 \
+# --resize_size 192 \
+# --batch_size 16 \
+# --loss_function lovasz \
+# --callback reduce_lr \
+# --freeze_encoder 0 \
+# --early_stop_patience 15 \
+# --reduce_lr_factor 0.5 \
+# --reduce_lr_patience 8 \
+# --reduce_lr_min 0.0000125 \
+# --augmentation_name valid_plus \
+# --augmentation_prob 1.0 \
+# --network unet_resnet_34_lovasz \
+# --alias _192_224_reduce_lr_smaller_decoder_bce_dice_hypecolumn_csse
+
+# python3 train.py \
+# --epochs 125 \
+# --fold 0 \
+# --learning_rate 0.0001 \
+# --input_size 128 \
+# --resize_size 101 \
+# --batch_size 64 \
+# --loss_function bce_dice \
+# --callback reduce_lr \
+# --freeze_encoder 0 \
+# --early_stop_patience 20 \
+# --reduce_lr_factor 0.25 \
+# --reduce_lr_patience 10 \
+# --reduce_lr_min 0.00000625 \
+# --augmentation_name valid_plus \
+# --augmentation_prob 1.0 \
+# --network unet_resnet_34 \
+# --alias _101_128_reduce_lr_smaller_decoder_bce_dice_corr
+
+# python3 train.py \
+# --epochs 50 \
+# --n_snapshots 1 \
+# --fold 0 \
+# --learning_rate 0.0001 \
+# --input_size 224 \
+# --resize_size 192 \
+# --batch_size 32 \
+# --loss_function bce_dice \
+# --callback snapshot \
+# --freeze_encoder 0 \
+# --augmentation_name valid_plus \
+# --augmentation_prob 1.0 \
+# --network unet_resnet_34 \
+# --alias _192_224_v4
+
+# python3 train.py \
+# --epochs 40 \
+# --pretrain_weights /home/RnD/babakhin.y/salt/unet_resnet_34_lovasz_192_224_reduce_lr_smaller_decoder_bce_dice_csse_150_epochs/fold_{}.hdf5 \
+# --n_snapshots 2 \
+# --fold 0 \
+# --learning_rate 0.00005 \
+# --input_size 224 \
+# --resize_size 192 \
+# --batch_size 32 \
+# --loss_function lovasz \
+# --callback snapshot \
+# --augmentation_name valid_plus \
+# --augmentation_prob 1.0 \
+# --network unet_resnet_34_lovasz \
+# --alias _192_224_reduce_lr_smaller_decoder_bce_dice_csse_150_epochs_2_snapshots
+
+
+
+

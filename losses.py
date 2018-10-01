@@ -54,6 +54,12 @@ def jacard_coef_loss_bce(y_true, y_pred, jacard=0.5, bce=0.5):
 def jacard_dice_bce_loss(y_true, y_pred, jacard=0.5, bce=0.3, dice=0.2):
     return binary_crossentropy(y_true, y_pred) * bce + jacard_coef_loss(y_true, y_pred) * jacard + dice_coef_loss(y_true, y_pred) * dice
 
+def focal_loss(y_true, y_pred, gamma = 2., alpha = 0.75):
+    y_pred = K.clip(y_pred, 1e-6, 1 - 1e-6)
+    p_t = tf.where(tf.equal(y_true, 1), y_pred, 1. - y_pred)
+    alpha_t = tf.where(tf.equal(y_true, 1), K.ones_like(y_pred) * K.constant(alpha), K.ones_like(y_pred) * K.constant(1. - alpha))
+    loss = K.mean(-1. * alpha_t * (1. - p_t)**gamma * K.log(p_t))
+    return loss
 
 def make_loss(loss_name):
     if loss_name == 'crossentropy':
@@ -67,22 +73,25 @@ def make_loss(loss_name):
         return loss
     elif loss_name == 'dice':
         return dice_coef_loss
+    
     elif loss_name == 'bce_dice':
         def loss(y, p):
             return dice_coef_loss_bce(y, p, dice=0.5, bce=0.5)
         return loss
-
-#     elif loss_name == 'lovasz':
-#         return lovasz_loss
 
     elif loss_name == 'lovasz':
         def loss(y, p):
             return lovasz_hinge(p, y, per_image=True, ignore=None)
         return loss
     
+    elif loss_name == 'focal':
+        def loss(y, p):
+            return focal_loss(y, p, gamma = 2., alpha = 0.75)
+        return loss
+    
     elif loss_name == 'bce_jacard_dice':
         def loss(y, p):
-            return jacard_dice_bce_loss(y, p, jacard=0.5, bce=0.3, dice=0.2)
+            return jacard_dice_bce_loss(y, p, jacard=0.3, bce=0.4, dice=0.3)
         return loss
     
     else:
@@ -161,18 +170,6 @@ def Kaggle_IoU_Precision(y_true, y_pred, threshold=0.5):
     return prec_iou
 
 
-def focal_loss(gamma=2., alpha=0.75):
-    def focal_loss_fixed(y_true, y_pred):
-        y_pred = K.clip(y_pred, 1e-6, 1 - 1e-6)
-        p_t = tf.where(tf.equal(y_true, 1), y_pred, 1. - y_pred)
-        alpha_t = tf.where(tf.equal(y_true, 1), K.ones_like(y_pred) * K.constant(alpha),
-                           K.ones_like(y_pred) * K.constant(1. - alpha))
-        loss = K.mean(-1. * alpha_t * (1. - p_t) ** gamma * K.log(p_t))
-        return loss
-
-    return focal_loss_fixed
-
-
 # """
 # Lovasz-Softmax and Jaccard hinge loss in Tensorflow
 # Maxim Berman 2018 ESAT-PSI KU Leuven (MIT License)
@@ -241,10 +238,9 @@ def lovasz_hinge_flat(logits, labels):
         errors_sorted, perm = tf.nn.top_k(errors, k=tf.shape(errors)[0], name="descending_sort")
         gt_sorted = tf.gather(labelsf, perm)
         grad = lovasz_grad(gt_sorted)
-        loss = tf.tensordot(tf.nn.relu(errors_sorted), tf.stop_gradient(grad), 1, name="loss_non_void")
-        # ELU + 1?!!?!
-        # per_image True or False?!
-        #loss = tf.tensordot(tf.nn.elu(errors_sorted)+1., tf.stop_gradient(grad), 1, name="loss_non_void")
+        #loss = tf.tensordot(tf.nn.relu(errors_sorted), tf.stop_gradient(grad), 1, name="loss_non_void")
+        # ELU + 1
+        loss = tf.tensordot(tf.nn.elu(errors_sorted)+1., tf.stop_gradient(grad), 1, name="loss_non_void")
         return loss
 
     # deal with the void prediction case (only void pixels)
@@ -270,88 +266,3 @@ def flatten_binary_scores(scores, labels, ignore=None):
     vscores = tf.boolean_mask(scores, valid, name='valid_scores')
     vlabels = tf.boolean_mask(labels, valid, name='valid_labels')
     return vscores, vlabels
-
-# # --------------------------- MULTICLASS LOSSES ---------------------------
-
-
-# def lovasz_softmax(probas, labels, classes='all', per_image=False, ignore=None, order='BHWC'):
-#     """
-#     Multi-class Lovasz-Softmax loss
-#       probas: [B, H, W, C] or [B, C, H, W] Variable, class probabilities at each prediction (between 0 and 1)
-#       labels: [B, H, W] Tensor, ground truth labels (between 0 and C - 1)
-#       classes: 'all' for all, 'present' for classes present in labels, or a list of classes to average.
-#       per_image: compute the loss per image instead of per batch
-#       ignore: void class labels
-#       order: use BHWC or BCHW
-#     """
-#     if per_image:
-#         def treat_image(prob_lab):
-#             prob, lab = prob_lab
-#             prob, lab = tf.expand_dims(prob, 0), tf.expand_dims(lab, 0)
-#             prob, lab = flatten_probas(prob, lab, ignore, order)
-#             return lovasz_softmax_flat(prob, lab, classes=classes)
-#         losses = tf.map_fn(treat_image, (probas, labels), dtype=tf.float32)
-#         loss = tf.reduce_mean(losses)
-#     else:
-#         loss = lovasz_softmax_flat(*flatten_probas(probas, labels, ignore, order), classes=classes)
-#     return loss
-
-
-# def lovasz_softmax_flat(probas, labels, classes='all'):
-#     """
-#     Multi-class Lovasz-Softmax loss
-#       probas: [P, C] Variable, class probabilities at each prediction (between 0 and 1)
-#       labels: [P] Tensor, ground truth labels (between 0 and C - 1)
-#       classes: 'all' for all, 'present' for classes present in labels, or a list of classes to average.
-#     """
-#     C = 1
-#     losses = []
-#     present = []
-#     class_to_sum = list(range(C)) if classes in ['all', 'present'] else classes
-#     for c in class_to_sum:
-#         fg = tf.cast(tf.equal(labels, c), probas.dtype)  # foreground for class c
-#         if classes == 'present':
-#             present.append(tf.reduce_sum(fg) > 0)
-#         errors = tf.abs(fg - probas[:, c])
-#         errors_sorted, perm = tf.nn.top_k(errors, k=tf.shape(errors)[0], name="descending_sort_{}".format(c))
-#         fg_sorted = tf.gather(fg, perm)
-#         grad = lovasz_grad(fg_sorted)
-#         losses.append(
-#             tf.tensordot(errors_sorted, tf.stop_gradient(grad), 1, name="loss_class_{}".format(c))
-#                       )
-#     if len(class_to_sum) == 1:  # short-circuit mean when only one class
-#         return losses[0]
-#     losses_tensor = tf.stack(losses)
-#     if classes == 'present':
-#         present = tf.stack(present)
-#         losses_tensor = tf.boolean_mask(losses_tensor, present)
-#     loss = tf.reduce_mean(losses_tensor)
-#     return loss
-
-
-# def flatten_probas(probas, labels, ignore=None, order='BHWC'):
-#     """
-#     Flattens predictions in the batch
-#     """
-#     if order == 'BCHW':
-#         probas = tf.transpose(probas, (0, 2, 3, 1), name="BCHW_to_BHWC")
-#         order = 'BHWC'
-#     if order != 'BHWC':
-#         raise NotImplementedError('Order {} unknown'.format(order))
-#     C = 1
-#     probas = tf.reshape(probas, (-1, C))
-#     labels = tf.reshape(labels, (-1,))
-#     if ignore is None:
-#         return probas, labels
-#     valid = tf.not_equal(labels, ignore)
-#     vprobas = tf.boolean_mask(probas, valid, name='valid_probas')
-#     vlabels = tf.boolean_mask(labels, valid, name='valid_labels')
-#     return vprobas, vlabels
-
-# def keras_lovasz_softmax(labels,probas):
-#     #return lovasz_softmax(probas, labels)+binary_crossentropy(labels, probas)
-#     return lovasz_softmax(probas, labels)
-
-# model.compile(loss=keras_lovasz_softmax, optimizer="adam", metrics=["accuracy",mean_iou])
-# I misread the paper. Lovasz_softmax is for multi-class segmentation. For binary tasks, you need the logit and Lovasz hinge (remove the final layer, be it softmax or sigmoid)
-
