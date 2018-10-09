@@ -9,13 +9,6 @@ from keras.applications.densenet import preprocess_input as preprocess_input_den
 from keras.applications.xception import preprocess_input as preprocess_input_xception
 from keras.applications.vgg16 import preprocess_input as preprocess_input_vgg
 
-# resnet34
-# conv1 = resnet_base.get_layer("activation_1").output  # First activation
-# conv2 = resnet_base.get_layer("activation_7").output # Intermediate activation
-# conv3 = resnet_base.get_layer("activation_15").output # Intermediate activation
-# conv4 = resnet_base.get_layer("activation_27").output # Intermediate activation
-# conv5 = resnet_base.get_layer("activation_33").output  # Last activation
-
 def get_model(network, input_shape, freeze_encoder):
     
     if network == 'simple_unet':

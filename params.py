@@ -28,6 +28,7 @@ arg('--data_root', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/
 arg('--images_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train/images/')
 arg('--masks_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train/masks/')
 arg('--test_folder', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/test/images/')
+#arg('--folds_csv', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train_proc_puzzle.csv')
 arg('--folds_csv', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train_proc_v2_gr.csv')
 arg('--out_root_dir', default='submissions/')
 

@@ -59,12 +59,15 @@ def main():
         df_valid['iout'] = res['iout']
         df_valid['dice'] = res['dice']
         df_valid['jacard'] = res['jacard']
+        #df_valid['iout_cpmp'] = res['iout_cpmp']
+        
                 
         print(df_valid.groupby('coverage_class')[['iout','dice','jacard']].aggregate('mean'))
          
         print('Without 0 class: ',"{} / {} / {}".format(np.round(np.mean(df_valid[df_valid.coverage_class>0]['iout']),5),np.round(np.mean(df_valid[df_valid.coverage_class>0]['dice']),5),np.round(np.mean(df_valid[df_valid.coverage_class>0]['jacard']),5)))    
             
         print("{} / {} / {}".format(np.round(np.mean(res['iout']),5),np.round(np.mean(res['dice']),5),np.round(np.mean(res['jacard']),5)))
+        #print(np.round(np.mean(res['iout_cpmp']),5))
 
 
         gc.collect()

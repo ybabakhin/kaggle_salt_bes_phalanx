@@ -312,69 +312,8 @@ def ensemble(model_dirs, folds, ids, thr, classification):
         rles.append(rle)
     return rles
 
-def evaluate_exp(model_dirs, ids, thr, classification, low_value, pixels, del_pixels):
-    metrics = defaultdict(list)
 
-    for img_id in tqdm(ids):
-        preds = []
-        for d in model_dirs:
-            path = os.path.join(d, 'oof')
-            mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-            
-            img = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-            if np.unique(img).shape[0] == 1:
-                preds.append(np.zeros(mask.shape))
-            else:
-                preds.append(np.array(mask / 255, np.float32))
-            
-            
-        
-        # final_pred = scipy.stats.mstats.gmean(np.array(preds), axis=0)
-        final_pred = np.mean(np.array(preds), axis=0)
-
-        true_mask = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-        true_mask = np.array(true_mask / 255, np.float32)
-        
-
-        
-        if classification != '':
-            tt = pd.read_csv(os.path.join(classification,'probs_oof.csv'))
-            prob = tt[tt.id==img_id].prob.values[0]
-            if prob < 0.5:
-                final_pred = np.zeros(mask.shape)
-            #final_pred*=prob
-        
-        # https://docs.opencv.org/3.1.0/d4/d13/tutorial_py_filtering.html
-#         final_pred = cv2.blur(final_pred,(2,2))
-        
-        thr_mask_1 = np.zeros((101,101))
-        thr_mask_1+=thr
-        thr_mask_2 = np.zeros((101,101))
-        thr_mask_2+=thr
-        for row, const in enumerate(np.linspace(low_value, thr, pixels)):
-            thr_mask_1[row, :pixels] = const
-            thr_mask_1[row, -pixels:] = const
-            thr_mask_1[-row, -pixels:] = const
-            thr_mask_1[-row, :pixels] = const
-            thr_mask_2[:pixels, row] = const
-            thr_mask_2[-pixels:, row] = const
-            thr_mask_2[-pixels:, -row] = const
-            thr_mask_2[:pixels, -row] = const
-        thr_mask = (thr_mask_1+thr_mask_2)/2
-    
-        final_pred = final_pred > thr_mask
-
-        num_of_pixel_in_mask = final_pred.sum()
-        if num_of_pixel_in_mask <= del_pixels:
-            final_pred = np.zeros(mask.shape)
-        
-        metrics['iout'].append(iou_metric(true_mask, final_pred))
-        metrics['dice'].append(dice_coef_np(true_mask, final_pred))
-        metrics['jacard'].append(jacard_coef_np(true_mask, final_pred))
-
-    return metrics
-
-def evaluate(model_dirs, ids, thr, classification, snapshots):
+def evaluate(model_dirs, ids, thr, classification, snapshots, leaks_dict=None):
     metrics = defaultdict(list)
 
     for img_id in tqdm(ids):
@@ -409,6 +348,11 @@ def evaluate(model_dirs, ids, thr, classification, snapshots):
 #         final_pred = cv2.blur(final_pred,(2,2))
         
         final_pred = final_pred > thr
+        
+        if leaks_dict:
+            if img_id in leaks_dict.keys():
+                final_pred = leaks_dict[img_id]
+                
 
 #         num_of_pixel_in_mask = final_pred.sum()
 #         if num_of_pixel_in_mask <= 30:
@@ -431,42 +375,4 @@ def freeze_model(model, freeze_before_layer):
                 freeze_before_layer_index = i
         for l in model.layers[:freeze_before_layer_index + 1]:
             l.trainable = False
-
-# Для тех, кому лень придумывать визуализацию
-
-# ```ims = []
-# for image, ytrue, ypred in zip(images.cpu().data.numpy()[i::4],
-#                                ytrues.cpu().data.numpy()[i::4],
-#                                ypreds.cpu().data.numpy()[i::4]):
-#     image = np.swapaxes((np.swapaxes(image, 1, 2) + 2.15) / 4.8, 0, 2)[:, :, ::-1]
-#     ytrue = ytrue[0]
-#     ypred = ypred[0]
-
-#     yprob = np_sigmoid(ypred)
-#     ypred = (yprob > 0.5).astype(np.float32)
-
-#     yfp = ypred * (1 - ytrue)
-#     yfn = (1 - ypred) * ytrue
-#     ytp = ypred * ytrue
-#     ytn = (1 - ypred) * (1 - ytrue)
-
-#     yshow = np.zeros_like(image)
-#     yshow[..., 2] = yfn
-#     yshow[..., 1] = yfp
-#     # yshow += (yfp + yfn)[..., np.newaxis] * (0.5 * image)
-#     yshow += ytp[..., np.newaxis] * (0.9 + 0.1 * image)
-#     yshow += ytn[..., np.newaxis] * (0.1 * image)
-
-#     ydiff = 0.5 + 0.5 * (yprob - ytrue)
-
-#     im = np.hstack([np.uint8(image * 255),
-#                     np.uint8(yshow * 255),
-#                     colorize(yprob),
-#                     colorize(ydiff)])
-#     ims.append(im)
-# im = np.vstack(ims)
-# if training:
-#     cv2.imwrite(f'output/{name}/fold{fold}/train/{epoch + 1:03d}_{suffix}_{i + 1}.png', im)
-# else:
-#     cv2.imwrite(f'output/{name}/fold{fold}/valid/{i + 1}_{epoch + 1:03d}_{suffix}.png', im)```
 
