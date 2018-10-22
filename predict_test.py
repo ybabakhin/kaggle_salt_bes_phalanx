@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
 import os
-from keras import backend as K
 import gc
-from keras.optimizers import Adam, RMSprop, SGD
-from utils import predict_test, evaluate, ensemble, ThreadsafeIter, classification_predict_test
+from keras import backend as K
+from keras.optimizers import RMSprop
+from utils import predict_test
 from params import args
 from models.models import get_model
-from losses import *
+from losses import Kaggle_IoU_Precision, make_loss
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
     print(args.network + args.alias)
-    
+
     for fold in folds:
         K.clear_session()
         print('***************************** FOLD {} *****************************'.format(fold))
@@ -25,7 +25,7 @@ def main():
 
         model, preprocess = get_model(args.network,
                                       input_shape=(args.input_size, args.input_size, 3),
-                                     freeze_encoder=args.freeze_encoder)
+                                      freeze_encoder=args.freeze_encoder)
         model.compile(optimizer=RMSprop(lr=args.learning_rate), loss=make_loss(args.loss_function),
                       metrics=[Kaggle_IoU_Precision])
 

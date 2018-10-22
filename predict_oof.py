@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
+import keras.backend as K
 import os
-from keras import backend as K
 import gc
-from keras.optimizers import Adam, RMSprop, SGD
-from utils import predict_test, evaluate, ensemble, ThreadsafeIter, classification_predict_test
+from keras.optimizers import RMSprop
+from utils import predict_test, evaluate
 from params import args
 from models.models import get_model
-from losses import *
+from losses import make_loss, Kaggle_IoU_Precision
 
 
 def main():
@@ -15,9 +15,8 @@ def main():
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
     print(args.network + args.alias)
-    
+
     for fold in folds:
-        
         K.clear_session()
         # print('***************************** FOLD {} *****************************'.format(fold))
 
@@ -26,7 +25,7 @@ def main():
 
         # Initialize Model
         weights_path = os.path.join(MODEL_PATH, args.prediction_weights.format(fold))
-        
+
         model, preprocess = get_model(args.network,
                                       input_shape=(args.input_size, args.input_size, 3),
                                       freeze_encoder=args.freeze_encoder)
@@ -47,28 +46,27 @@ def main():
                             TTA='flip',
                             preprocess=preprocess)
 
-        
         res = evaluate([MODEL_PATH],
                        train[train.fold.isin([fold])].id.values,
                        0.5,
                        classification='',
-                      snapshots=['oof'])
-        
+                       snapshots=['oof'])
+
         print(args.prediction_weights.format(fold))
-        
+
         df_valid['iout'] = res['iout']
         df_valid['dice'] = res['dice']
         df_valid['jacard'] = res['jacard']
-        #df_valid['iout_cpmp'] = res['iout_cpmp']
-        
-                
-        print(df_valid.groupby('coverage_class')[['iout','dice','jacard']].aggregate('mean'))
-         
-        print('Without 0 class: ',"{} / {} / {}".format(np.round(np.mean(df_valid[df_valid.coverage_class>0]['iout']),5),np.round(np.mean(df_valid[df_valid.coverage_class>0]['dice']),5),np.round(np.mean(df_valid[df_valid.coverage_class>0]['jacard']),5)))    
-            
-        print("{} / {} / {}".format(np.round(np.mean(res['iout']),5),np.round(np.mean(res['dice']),5),np.round(np.mean(res['jacard']),5)))
-        #print(np.round(np.mean(res['iout_cpmp']),5))
 
+        print(df_valid.groupby('coverage_class')[['iout', 'dice', 'jacard']].aggregate('mean'))
+
+        print('Without 0 class: ',
+              "{} / {} / {}".format(np.round(np.mean(df_valid[df_valid.coverage_class > 0]['iout']), 5),
+                                    np.round(np.mean(df_valid[df_valid.coverage_class > 0]['dice']), 5),
+                                    np.round(np.mean(df_valid[df_valid.coverage_class > 0]['jacard']), 5)))
+
+        print("{} / {} / {}".format(np.round(np.mean(res['iout']), 5), np.round(np.mean(res['dice']), 5),
+                                    np.round(np.mean(res['jacard']), 5)))
 
         gc.collect()
 

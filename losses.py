@@ -52,88 +52,29 @@ def jacard_coef_loss_bce(y_true, y_pred, jacard=0.5, bce=0.5):
 
 
 def jacard_dice_bce_loss(y_true, y_pred, jacard=0.5, bce=0.3, dice=0.2):
-    return binary_crossentropy(y_true, y_pred) * bce + jacard_coef_loss(y_true, y_pred) * jacard + dice_coef_loss(y_true, y_pred) * dice
+    return binary_crossentropy(y_true, y_pred) * bce + jacard_coef_loss(y_true, y_pred) * jacard + dice_coef_loss(
+        y_true, y_pred) * dice
 
-def focal_loss(y_true, y_pred, gamma = 2., alpha = 0.75):
-    y_pred = K.clip(y_pred, 1e-6, 1 - 1e-6)
-    p_t = tf.where(tf.equal(y_true, 1), y_pred, 1. - y_pred)
-    alpha_t = tf.where(tf.equal(y_true, 1), K.ones_like(y_pred) * K.constant(alpha), K.ones_like(y_pred) * K.constant(1. - alpha))
-    loss = K.mean(-1. * alpha_t * (1. - p_t)**gamma * K.log(p_t))
-    return loss
 
 def bce_dice_no_empty(y_true, y_pred):
-    return K.max(K.max(y_true,axis=0),axis=1)*(dice_coef_loss_bce(y_true, y_pred, dice=0.5, bce=0.5))
-
-def make_loss(loss_name):
-    if loss_name == 'crossentropy':
-        return K.binary_crossentropy
-    elif loss_name == 'jacard':
-        return jacard_coef_loss
-    elif loss_name == 'bce_jacard':
-        def loss(y, p):
-            return jacard_coef_loss_bce(y, p, jacard=0.5, bce=0.5)
-
-        return loss
-    elif loss_name == 'dice':
-        return dice_coef_loss
-    
-    elif loss_name == 'bce_dice':
-        def loss(y, p):
-            return dice_coef_loss_bce(y, p, dice=0.5, bce=0.5)
-        return loss
-
-    elif loss_name == 'lovasz':
-        def loss(y, p):
-            return lovasz_hinge(p, y, per_image=True, ignore=None)
-        return loss
-    
-    elif loss_name == 'focal':
-        def loss(y, p):
-            return focal_loss(y, p, gamma = 2., alpha = 0.75)
-        return loss
-    
-    elif loss_name == 'bce_jacard_dice':
-        def loss(y, p):
-            return jacard_dice_bce_loss(y, p, jacard=0.3, bce=0.4, dice=0.3)
-        return loss
-    
-    else:
-        ValueError("Unknown loss")
-
-def cpmp_iou_vector(A, B):
-    # Numpy version
-    
-    batch_size = A.shape[0]
-    metric = 0.0
-    for batch in range(batch_size):
-        t, p = A[batch], B[batch]
-        true = np.sum(t)
-        pred = np.sum(p)
-        
-        # deal with empty mask first
-        if true == 0:
-            metric += (pred == 0)
-            continue
-        
-        # non empty mask case.  Union is never empty 
-        # hence it is safe to divide by its number of pixels
-        intersection = np.sum(t * p)
-        union = true + pred - intersection
-        iou = intersection / union
-        
-        # iou metrric is a stepwise approximation of the real iou over 0.5
-        iou = np.floor(max(0, (iou - 0.45)*20)) / 10
-        
-        metric += iou
-        
-    # teake the average over all images in batch
-    metric /= batch_size
-    return metric
+    return K.max(K.max(y_true, axis=0), axis=1) * (dice_coef_loss_bce(y_true, y_pred, dice=0.5, bce=0.5))
 
 
-def cpmp_iou_metric(label, pred):
-    # Tensorflow version
-    return tf.py_func(cpmp_iou_vector, [label, pred > 0.5], tf.float64)
+def Kaggle_IoU_Precision(y_true, y_pred, threshold=0.5):
+    y_pred = K.squeeze(tf.to_int32(y_pred > threshold), -1)
+    y_true = K.cast(y_true[..., 0], K.floatx())
+    y_pred = K.cast(y_pred, K.floatx())
+    truth_areas = K.sum(y_true, axis=[1, 2])
+    pred_areas = K.sum(y_pred, axis=[1, 2])
+    intersection = K.sum(y_true * y_pred, axis=[1, 2])
+    union = K.clip(truth_areas + pred_areas - intersection, 1e-9, 128 * 128)
+    check = K.map_fn(lambda x: K.equal(x, 0), truth_areas + pred_areas, dtype=tf.bool)
+    p = intersection / union
+    iou = K.switch(check, p + 1., p)
+
+    prec = K.map_fn(lambda x: K.mean(K.greater(x, np.arange(0.5, 1.0, 0.05))), iou, dtype=tf.float32)
+    prec_iou = K.mean(prec)
+    return prec_iou
 
 
 # src: https://www.kaggle.com/aglotero/another-iou-metric
@@ -191,23 +132,6 @@ def iou_metric(y_true_in, y_pred_in, print_table=False):
     return np.mean(prec)
 
 
-def Kaggle_IoU_Precision(y_true, y_pred, threshold=0.5):
-    y_pred = K.squeeze(tf.to_int32(y_pred > threshold), -1)
-    y_true = K.cast(y_true[..., 0], K.floatx())
-    y_pred = K.cast(y_pred, K.floatx())
-    truth_areas = K.sum(y_true, axis=[1, 2])
-    pred_areas = K.sum(y_pred, axis=[1, 2])
-    intersection = K.sum(y_true * y_pred, axis=[1, 2])
-    union = K.clip(truth_areas + pred_areas - intersection, 1e-9, 128 * 128)
-    check = K.map_fn(lambda x: K.equal(x, 0), truth_areas + pred_areas, dtype=tf.bool)
-    p = intersection / union
-    iou = K.switch(check, p + 1., p)
-
-    prec = K.map_fn(lambda x: K.mean(K.greater(x, np.arange(0.5, 1.0, 0.05))), iou, dtype=tf.float32)
-    prec_iou = K.mean(prec)
-    return prec_iou
-
-
 # """
 # Lovasz-Softmax and Jaccard hinge loss in Tensorflow
 # Maxim Berman 2018 ESAT-PSI KU Leuven (MIT License)
@@ -218,6 +142,7 @@ def lovasz_loss(y_true, y_pred):
     logits = K.log(y_pred / (1. - y_pred))
     loss = lovasz_hinge(logits, y_true, per_image=True, ignore=None)
     return loss
+
 
 def lovasz_grad(gt_sorted):
     """
@@ -276,9 +201,9 @@ def lovasz_hinge_flat(logits, labels):
         errors_sorted, perm = tf.nn.top_k(errors, k=tf.shape(errors)[0], name="descending_sort")
         gt_sorted = tf.gather(labelsf, perm)
         grad = lovasz_grad(gt_sorted)
-        #loss = tf.tensordot(tf.nn.relu(errors_sorted), tf.stop_gradient(grad), 1, name="loss_non_void")
+        # loss = tf.tensordot(tf.nn.relu(errors_sorted), tf.stop_gradient(grad), 1, name="loss_non_void")
         # ELU + 1
-        loss = tf.tensordot(tf.nn.elu(errors_sorted)+1., tf.stop_gradient(grad), 1, name="loss_non_void")
+        loss = tf.tensordot(tf.nn.elu(errors_sorted) + 1., tf.stop_gradient(grad), 1, name="loss_non_void")
         return loss
 
     # deal with the void prediction case (only void pixels)
@@ -304,3 +229,41 @@ def flatten_binary_scores(scores, labels, ignore=None):
     vscores = tf.boolean_mask(scores, valid, name='valid_scores')
     vlabels = tf.boolean_mask(labels, valid, name='valid_labels')
     return vscores, vlabels
+
+
+def make_loss(loss_name):
+    if loss_name == 'crossentropy':
+        return K.binary_crossentropy
+
+    elif loss_name == 'jacard':
+        return jacard_coef_loss
+
+    elif loss_name == 'bce_jacard':
+        def loss(y, p):
+            return jacard_coef_loss_bce(y, p, jacard=0.5, bce=0.5)
+
+        return loss
+
+    elif loss_name == 'dice':
+        return dice_coef_loss
+
+    elif loss_name == 'bce_dice':
+        def loss(y, p):
+            return dice_coef_loss_bce(y, p, dice=0.5, bce=0.5)
+
+        return loss
+
+    elif loss_name == 'lovasz':
+        def loss(y, p):
+            return lovasz_hinge(p, y, per_image=True, ignore=None)
+
+        return loss
+
+    elif loss_name == 'bce_jacard_dice':
+        def loss(y, p):
+            return jacard_dice_bce_loss(y, p, jacard=0.3, bce=0.4, dice=0.3)
+
+        return loss
+
+    else:
+        ValueError("Unknown loss")

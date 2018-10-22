@@ -1,66 +1,45 @@
-# import tensorflow as tf
-# config = tf.ConfigProto()
-# config.gpu_options.allow_growth = True
-# session = tf.Session(config=config)
-
 import pandas as pd
 import numpy as np
 import os
-from keras import backend as K
 import gc
-from keras.optimizers import RMSprop, Adam, SGD
-from utils import predict_test, evaluate, ensemble, ThreadsafeIter, classification_predict_test
-from datasets.generators import SegmentationDataGenerator, ClassificationDataGenerator
+from keras import backend as K
+from keras.optimizers import RMSprop
+from utils import ThreadsafeIter
+from datasets.generators import SegmentationDataGenerator
 from params import args
-from callbacks import get_callback
+from callbacks.callbacks import get_callback
 from augmentations import get_augmentations
 from models.models import get_model
-from losses import *
+from losses import make_loss, Kaggle_IoU_Precision
 
 
 def main():
-    
-#     import tensorflow as tf
-#     from keras.backend.tensorflow_backend import set_session
-#     config = tf.ConfigProto()
-    
-#     config.gpu_options.per_process_gpu_memory_fraction = 0.85
-#     set_session(tf.Session(config=config))
-
     train = pd.read_csv(args.folds_csv)
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
-    
+
     for fold in folds:
-        
+
         K.clear_session()
         print('***************************** FOLD {} *****************************'.format(fold))
 
         if fold == 0:
             if os.path.isdir(MODEL_PATH):
-                print('Such Model already exists')
-                # raise ValueError('Such Model already exists')
+                raise ValueError('Such Model already exists')
             os.system("mkdir {}".format(MODEL_PATH))
             os.system("cp train_all.sh {}".format(MODEL_PATH))
 
         df_train = train[train.fold != fold].copy().reset_index(drop=True)
-        
-        
+
         if args.pseudolabels_dir != '':
             pseudolabels = pd.read_csv(args.pseudolabels_csv)
-            #pseudolabels = pseudolabels[pseudolabels.fold != fold]
-            #df_train = pd.concat([df_train,pseudolabels]).sample(frac=1,random_state=13).reset_index(drop=True)
-            df_train = pseudolabels.sample(frac=1,random_state=13).reset_index(drop=True)
-            
-        
-        print(df_train.shape)
+            df_train = pseudolabels.sample(frac=1, random_state=13).reset_index(drop=True)
+
         df_valid = train[train.fold == fold].copy().reset_index(drop=True)
 
-        # ids_train, ids_valid = df_train.id.values, df_valid.id.values
-        ids_train, ids_valid = df_train[df_train.unique_pixels > 1].id.values, df_valid[df_valid.unique_pixels > 1].id.values
-        
-        print(ids_train.shape)
-        
+        ids_train, ids_valid = df_train[df_train.unique_pixels > 1].id.values, df_valid[
+            df_valid.unique_pixels > 1].id.values
+
         print('Training on {} samples'.format(ids_train.shape[0]))
         print('Validating on {} samples'.format(ids_valid.shape[0]))
 
@@ -72,14 +51,10 @@ def main():
                                       input_shape=(args.input_size, args.input_size, 3),
                                       freeze_encoder=args.freeze_encoder)
         print(model.summary())
-        
+
         def lb_metric(y_true, y_pred):
-            return Kaggle_IoU_Precision(y_true, y_pred, threshold = 0 if args.loss_function == 'lovasz' else 0.5)
-        
-#         deep_model.compile(optimizer='adam',
-#                                          loss=['binary_crossentropy', bce_dice_no_empty, make_loss(args.loss_function)], 
-#                                          loss_weights=[0.05, 0.1, 1.0])
-        
+            return Kaggle_IoU_Precision(y_true, y_pred, threshold=0 if args.loss_function == 'lovasz' else 0.5)
+
         model.compile(optimizer=RMSprop(lr=args.learning_rate), loss=make_loss(args.loss_function),
                       metrics=[lb_metric])
 
