@@ -27,7 +27,6 @@ def main():
 #     config.gpu_options.per_process_gpu_memory_fraction = 0.85
 #     set_session(tf.Session(config=config))
 
-    
     train = pd.read_csv(args.folds_csv)
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
@@ -45,10 +44,22 @@ def main():
             os.system("cp train_all.sh {}".format(MODEL_PATH))
 
         df_train = train[train.fold != fold].copy().reset_index(drop=True)
+        
+        
+        if args.pseudolabels_dir != '':
+            pseudolabels = pd.read_csv(args.pseudolabels_csv)
+            #pseudolabels = pseudolabels[pseudolabels.fold != fold]
+            #df_train = pd.concat([df_train,pseudolabels]).sample(frac=1,random_state=13).reset_index(drop=True)
+            df_train = pseudolabels.sample(frac=1,random_state=13).reset_index(drop=True)
+            
+        
+        print(df_train.shape)
         df_valid = train[train.fold == fold].copy().reset_index(drop=True)
 
         # ids_train, ids_valid = df_train.id.values, df_valid.id.values
         ids_train, ids_valid = df_train[df_train.unique_pixels > 1].id.values, df_valid[df_valid.unique_pixels > 1].id.values
+        
+        print(ids_train.shape)
         
         print('Training on {} samples'.format(ids_train.shape[0]))
         print('Validating on {} samples'.format(ids_valid.shape[0]))
@@ -64,6 +75,10 @@ def main():
         
         def lb_metric(y_true, y_pred):
             return Kaggle_IoU_Precision(y_true, y_pred, threshold = 0 if args.loss_function == 'lovasz' else 0.5)
+        
+#         deep_model.compile(optimizer='adam',
+#                                          loss=['binary_crossentropy', bce_dice_no_empty, make_loss(args.loss_function)], 
+#                                          loss_weights=[0.05, 0.1, 1.0])
         
         model.compile(optimizer=RMSprop(lr=args.learning_rate), loss=make_loss(args.loss_function),
                       metrics=[lb_metric])

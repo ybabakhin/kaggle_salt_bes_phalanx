@@ -26,10 +26,12 @@ arg('--freeze_encoder', type=int, default=0)
 arg('--models_dir', default='/home/RnD/babakhin.y/salt/')
 arg('--data_root', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/')
 arg('--images_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train/images/')
+arg('--pseudolabels_dir', default='')
 arg('--masks_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train/masks/')
 arg('--test_folder', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/test/images/')
 #arg('--folds_csv', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train_proc_puzzle.csv')
 arg('--folds_csv', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train_proc_v2_gr.csv')
+arg('--pseudolabels_csv', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/pseudolabels_v2.csv')
 arg('--out_root_dir', default='submissions/')
 
 arg('--initial_size', type=int, default=101)
@@ -39,5 +41,5 @@ arg('--reduce_lr_factor',  type=float, default=0.25)
 arg('--reduce_lr_patience',  type=int, default=7)
 arg('--reduce_lr_min',  type=float, default=0.000001)
 
-# sys.argv = ['foo']
+sys.argv = ['foo']
 args = parser.parse_args()

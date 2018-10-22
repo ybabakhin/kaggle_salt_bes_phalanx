@@ -11,12 +11,38 @@ class SegmentationDataGenerator:
         self.batch_size = batch_size
         self.preprocess = preprocess
         self.augs = augs
-        
+    
+    @staticmethod 
+    def get_down_masks(y1, new_img_size=128):
+        y2 = [resize(m, (new_img_size//2, new_img_size//2), preserve_range=True, order=3) for m in (y1) ]
+        y3 = [resize(m, (new_img_size//4, new_img_size//4), preserve_range=True, order=3) for m in (y1) ]
+        y4 = [resize(m, (new_img_size//8, new_img_size//8), preserve_range=True, order=3) for m in (y1) ]
+        y5 = [resize(m, (new_img_size//16, new_img_size//16), preserve_range=True, order=3) for m in (y1) ]
+        y2 = [(m > 0.5).astype('float32') for m in y2]
+        y3 = [(m > 0.5).astype('float32') for m in y3]
+        y4 = [(m > 0.5).astype('float32') for m in y4]
+        y5 = [(m > 0.5).astype('float32') for m in y5]
+        y2 = np.array(y2).reshape(-1, new_img_size//2, new_img_size//2, 1).astype('float32')
+        y3 = np.array(y3).reshape(-1, new_img_size//4, new_img_size//4, 1).astype('float32')
+        y4 = np.array(y4).reshape(-1, new_img_size//8, new_img_size//8, 1).astype('float32')
+        y5 = np.array(y5).reshape(-1, new_img_size//16, new_img_size//16, 1).astype('float32')
+
+        y6 = np.amax(y1, axis=(1,2), keepdims=True)
+
+        return [y6, y1, y2, y3, y4, y5, y1]    
+    
     def _read_image_train(self, id):
         # Read with resizing
 
-        img = cv2.imread(os.path.join(args.images_dir,'{}.png'.format(id)), cv2.IMREAD_COLOR)
-        mask = cv2.imread(os.path.join(args.masks_dir,'{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
+        
+        if os.path.isfile(os.path.join(args.images_dir,'{}.png'.format(id))):
+            img = cv2.imread(os.path.join(args.images_dir,'{}.png'.format(id)), cv2.IMREAD_COLOR)
+            mask = cv2.imread(os.path.join(args.masks_dir,'{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
+            
+        else:
+            img = cv2.imread(os.path.join(args.test_folder,'{}.png'.format(id)), cv2.IMREAD_COLOR)
+            mask = cv2.imread(os.path.join(args.pseudolabels_dir,'{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
+            
 
         img = np.array(img, np.float32)
 

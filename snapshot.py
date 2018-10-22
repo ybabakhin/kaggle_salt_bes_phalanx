@@ -80,7 +80,7 @@ class SnapshotCallbackBuilder:
         cos_inner = np.pi * (t % (self.T // self.M))  # t - 1 is used when t has 1-based indexing.
         cos_inner /= self.T // self.M
         cos_out = np.cos(cos_inner) + 1
-        #return max(float(self.alpha_zero / 2 * cos_out),0.00001)
+        #return max(float(self.alpha_zero / 2 * cos_out),0.000005)
         return float(self.alpha_zero / 2 * cos_out)
 
     

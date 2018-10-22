@@ -410,53 +410,87 @@ def unet_resnet_34(input_shape, freeze_encoder):
          encoder_weights='imagenet',
          freeze_encoder=freeze_encoder,
          skip_connections='default',
-         decoder_block_type='upsampling',
+         decoder_block_type='transpose',
          decoder_filters=(128,64,32,16,8),
          decoder_use_batchnorm=True,
          n_upsample_blocks=5,
          upsample_rates=(2,2,2,2,2),
          classes=1,
          activation='sigmoid')
-    
-    # Hypercolumn
-#     x = concatenate([hyper_list[-1], UpSampling2D(size=(2,2))(hyper_list[-2]), UpSampling2D(size=(4,4))(hyper_list[-3]),
-#                      UpSampling2D(size=(8,8))(hyper_list[-4]),UpSampling2D(size=(16,16))(hyper_list[-5])], axis=-1)
-    
-#     x = SpatialDropout2D(0.2)(x)
-    
+   
     x = SpatialDropout2D(0.2)(resnet_base.output)
-    
-    # CSSE
-    # x = csse_block(x, prefix='csse_block')
-    
-    
     x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(x)
     
     model = Model(resnet_base.input, x)
-
     
-#     model = FPN(backbone_name='resnet34',
-#         classes=1,
-#         input_shape=input_shape,
-#         input_tensor=None,
-#         encoder_weights='imagenet',
-#         freeze_encoder=False,
-#         fpn_layers='default',
-#         pyramid_block_filters=256,
-#         segmentation_block_filters=128,
-#         upsample_rates=(2, 2, 2, 2),
-#         last_upsample=2,
-#         interpolation='nearest',
-#         use_batchnorm=True,
-#         activation='sigmoid',
-#         dropout=0.2)
+    return model
 
-# Freeze weights for a single epoch at least with lr 0.001
-# Delete Another Maxpooling
-        
+def unet_resnet_34_lovasz(input_shape,freeze_encoder):
+    
+    resnet_base, hyper_list = Unet(backbone_name='resnet34',
+         input_shape=input_shape,
+         input_tensor=None,
+         encoder_weights='imagenet',
+         freeze_encoder=freeze_encoder,
+         skip_connections='default',
+         decoder_block_type='transpose',
+         decoder_filters=(128,64,32,16,8),
+         decoder_use_batchnorm=True,
+         n_upsample_blocks=5,
+         upsample_rates=(2,2,2,2,2),
+         classes=1,
+         activation='sigmoid')
+   
+    x = SpatialDropout2D(0.2)(resnet_base.output)
+    x = Conv2D(1, (1, 1), name="prediction")(x)
+    
+    model = Model(resnet_base.input, x)
+    
     return model
 
 
+
+def unet_resnet_34_deep_supervision(input_shape, freeze_encoder):
+    
+    resnet_base, hyper_list, middle_layer = Unet(backbone_name='resnet34',
+         input_shape=input_shape,
+         input_tensor=None,
+         encoder_weights='imagenet',
+         freeze_encoder=freeze_encoder,
+         skip_connections='default',
+         decoder_block_type='transpose',
+         decoder_filters=(64,64,64,64,64),
+         decoder_use_batchnorm=True,
+         n_upsample_blocks=5,
+         upsample_rates=(2,2,2,2,2),
+         classes=1,
+         activation='sigmoid')
+    
+    image_pool = AveragePooling2D(pool_size=8)(middle_layer)
+    # image_pool = GlobalAveragePooling2D()(image_pool)
+    # image_pool = Dense(64)(image_pool)
+    image_pool = Conv2D(64, 1)(image_pool)
+
+    classification = Flatten()(image_pool)
+    classification = Dense(1, activation='sigmoid')(classification)
+
+    hypercolumn = concatenate([hyper_list[-1], UpSampling2D(size=(2,2))(hyper_list[-2]), UpSampling2D(size=(4,4))(hyper_list[-3]),
+                     UpSampling2D(size=(8,8))(hyper_list[-4]),UpSampling2D(size=(16,16))(hyper_list[-5])], axis=-1)
+    
+    up_image_pool = UpSampling2D(size=128)(image_pool)
+
+    fusion = concatenate([hypercolumn, up_image_pool])
+    fusion = SpatialDropout2D(0.2)(fusion)
+    fusion = Conv2D(1, (3,3), padding='same')(fusion)
+    fusion = Activation('sigmoid')(fusion)
+
+    hypercolumn = SpatialDropout2D(0.2)(hypercolumn)
+    hypercolumn = Conv2D(1, (3,3), padding='same')(hypercolumn)
+    hypercolumn = Activation('sigmoid')(hypercolumn)
+
+    model = Model(inputs=resnet_base.input, outputs=[classification, hypercolumn, fusion])
+    
+    return model
 
 def unet_resnext_50(input_shape, freeze_encoder):
     
@@ -466,7 +500,7 @@ def unet_resnext_50(input_shape, freeze_encoder):
          encoder_weights='imagenet',
          freeze_encoder=freeze_encoder,
          skip_connections='default',
-         decoder_block_type='upsampling',
+         decoder_block_type='transpose',
          decoder_filters=(128,64,32,16,8),
          decoder_use_batchnorm=True,
          n_upsample_blocks=5,
@@ -479,12 +513,55 @@ def unet_resnext_50(input_shape, freeze_encoder):
     
     model = Model(resnet_base.input, x)
 
+    return model
+
+def unet_resnext_50_exp(input_shape, freeze_encoder):
+    
+    resnet_base, hyper_list = Unet(backbone_name='resnext50',
+         input_shape=input_shape,
+         input_tensor=None,
+         encoder_weights='imagenet',
+         freeze_encoder=freeze_encoder,
+         skip_connections='default',
+         decoder_block_type='transpose',
+         decoder_filters=(128,64,32,16,8),
+         decoder_use_batchnorm=True,
+         n_upsample_blocks=5,
+         upsample_rates=(2,2,2,2,2),
+         classes=1,
+         activation='sigmoid')
+
+    x = Conv2D(1, (1, 1), activation="sigmoid", name="prediction")(resnet_base.output)
+    
+    model = Model(resnet_base.input, x)
 
     return model
 
 
-
 def unet_resnext_50_lovasz(input_shape, freeze_encoder):
+    
+    resnet_base, hyper_list = Unet(backbone_name='resnext50',
+         input_shape=input_shape,
+         input_tensor=None,
+         encoder_weights='imagenet',
+         freeze_encoder=freeze_encoder,
+         skip_connections='default',
+         decoder_block_type='transpose',
+         decoder_filters=(128,64,32,16,8),
+         decoder_use_batchnorm=True,
+         n_upsample_blocks=5,
+         upsample_rates=(2,2,2,2,2),
+         classes=1,
+         activation='sigmoid')
+
+    x = SpatialDropout2D(0.2)(resnet_base.output)
+    x = Conv2D(1, (1, 1), name="prediction")(x)
+    
+    model = Model(resnet_base.input, x)
+
+    return model
+
+def unet_resnext_50_lovasz_exp(input_shape, freeze_encoder):
     
     resnet_base, hyper_list = Unet(backbone_name='resnext50',
          input_shape=input_shape,
@@ -507,6 +584,7 @@ def unet_resnext_50_lovasz(input_shape, freeze_encoder):
 
 
     return model
+
 
 
 def unet_resnext_101(input_shape, freeze_encoder):
@@ -583,37 +661,7 @@ def unet_resnet_152(input_shape, freeze_encoder):
 
     return model
 
-def unet_resnet_34_lovasz(input_shape,freeze_encoder):
-    
-    resnet_base, hyper_list = Unet(backbone_name='resnet34',
-         input_shape=input_shape,
-         input_tensor=None,
-         encoder_weights='imagenet',
-         freeze_encoder=freeze_encoder,
-         skip_connections='default',
-         decoder_block_type='upsampling',
-         decoder_filters=(128,64,32,16,8),
-         decoder_use_batchnorm=True,
-         n_upsample_blocks=5,
-         upsample_rates=(2,2,2,2,2),
-         classes=1,
-         activation='sigmoid')
-    
-    # Hypercolumn
-#     x = concatenate([hyper_list[-1], UpSampling2D(size=(2,2))(hyper_list[-2]), UpSampling2D(size=(4,4))(hyper_list[-3]),
-#                      UpSampling2D(size=(8,8))(hyper_list[-4]),UpSampling2D(size=(16,16))(hyper_list[-5])], axis=-1)
-    
-#     x = SpatialDropout2D(0.2)(x)
-    
-    x = SpatialDropout2D(0.2)(resnet_base.output)
-    
-    
-    
-    x = Conv2D(1, (1, 1), name="prediction")(x)
-    
-    model = Model(resnet_base.input, x)
-    
-    return model
+
 
 
 def unet_resnet_101(input_shape):

@@ -13,21 +13,19 @@ def get_augmentations(augmentation, p, input_shape):
                 Transpose()
             ], p=p)
         
-    if augmentation == 'initial_crops':
+    elif augmentation == 'initial_crops':
         augmentations = Compose([
                 RandomRotate90(0.9),
                 Flip(0.9),
                 Transpose(0.9),
                 RandomCrop(height=input_shape[0], width=input_shape[1])
             ], p=p)
-        
-#     elif augmentation == 'valid':
-#         augmentations = Compose([
-#                 HorizontalFlip(p=.5),
-#                 RandomBrightness(p=.2),
-#                 ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.4, rotate_limit=0, p=.7)
-#             ], p=p)
-    # Distortion?    
+    elif augmentation == 'valid':
+        augmentations = Compose([
+                HorizontalFlip(p=.5),
+                ShiftScaleRotate(shift_limit=0.1, scale_limit=0.2, rotate_limit=0, p=0.7)
+            ], p=p)
+  
     elif augmentation == 'valid_plus':
         augmentations = Compose([
                 HorizontalFlip(p=.5),

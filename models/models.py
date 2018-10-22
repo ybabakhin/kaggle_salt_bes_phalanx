@@ -1,4 +1,4 @@
-from models.models_zoo import simple_unet, simple_unet_v2, unet_resnet_50_vgg, unet_inception_resnet_v2, unet_mobilenet, unet_vgg_16, unet_resnet_18, unet_resnet_34, unet_resnet_50, unet_resnet_101, unet_resnet_152, unet_resnet_152_old, unet_resnet_101_do,unet_resnet_101_do_capacity,resnet_34_classification, unet_resnet_50_lovasz, unet_resnet_34_lovasz, unet_resnext_50, unet_resnext_50_lovasz, unet_resnext_101, unet_resnext_101_lovasz
+from models.models_zoo import simple_unet, simple_unet_v2, unet_resnet_50_vgg, unet_inception_resnet_v2, unet_mobilenet, unet_vgg_16, unet_resnet_18, unet_resnet_34, unet_resnet_50, unet_resnet_101, unet_resnet_152, unet_resnet_152_old, unet_resnet_101_do,unet_resnet_101_do_capacity,resnet_34_classification, unet_resnet_50_lovasz, unet_resnet_34_lovasz, unet_resnext_50, unet_resnext_50_lovasz, unet_resnext_50_exp, unet_resnext_50_lovasz_exp, unet_resnext_101, unet_resnext_101_lovasz, unet_resnet_34_deep_supervision
 from models.unets import resnet18_fpn, resnet34_fpn, resnet152_fpn, resnet101_fpn, resnet50_fpn, xception_fpn,  densenet_fpn, inception_resnet_v2_fpn, resnet50_fpn_modified
 
 from keras.applications.resnet50 import preprocess_input as preprocess_input_resnet50
@@ -42,6 +42,10 @@ def get_model(network, input_shape, freeze_encoder):
         model = unet_resnet_34(input_shape,freeze_encoder)
         return model, preprocess_input_resnet_18_34
     
+    elif network == 'unet_resnet_34_deep_supervision':
+        model = unet_resnet_34_deep_supervision(input_shape,freeze_encoder)
+        return model, preprocess_input_resnet_18_34
+    
     
     elif network == 'unet_resnet_50':
         model = unet_resnet_50(input_shape,freeze_encoder)
@@ -53,6 +57,15 @@ def get_model(network, input_shape, freeze_encoder):
     elif network == 'unet_resnext_50_lovasz':
         model = unet_resnext_50_lovasz(input_shape,freeze_encoder)
         return model, preprocess_input_resnet_18_34
+    
+    
+    elif network == 'unet_resnext_50_exp':
+        model = unet_resnext_50_exp(input_shape,freeze_encoder)
+        return model, preprocess_input_resnet_18_34
+    elif network == 'unet_resnext_50_lovasz_exp':
+        model = unet_resnext_50_lovasz_exp(input_shape,freeze_encoder)
+        return model, preprocess_input_resnet_18_34
+    
     
     
     elif network == 'unet_resnext_101':

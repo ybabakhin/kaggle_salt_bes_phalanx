@@ -61,6 +61,9 @@ def focal_loss(y_true, y_pred, gamma = 2., alpha = 0.75):
     loss = K.mean(-1. * alpha_t * (1. - p_t)**gamma * K.log(p_t))
     return loss
 
+def bce_dice_no_empty(y_true, y_pred):
+    return K.max(K.max(y_true,axis=0),axis=1)*(dice_coef_loss_bce(y_true, y_pred, dice=0.5, bce=0.5))
+
 def make_loss(loss_name):
     if loss_name == 'crossentropy':
         return K.binary_crossentropy
