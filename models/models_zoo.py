@@ -1,6 +1,6 @@
 from keras.engine.training import Model
 from keras.layers import SpatialDropout2D, Conv2D
-from models.segmentation_models import Unet
+from segmentation_models import Unet
 
 
 def unet_resnext_50(input_shape, freeze_encoder):
