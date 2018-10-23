@@ -3,12 +3,10 @@ import numpy as np
 import cv2
 from tqdm import tqdm_notebook, tqdm
 from collections import defaultdict
-import multiprocessing
-from contextlib import contextmanager
 from losses import iou_metric, jacard_coef_np, dice_coef_np
 import threading
 from params import args
-from albumentations import PadIfNeeded, CenterCrop, HorizontalFlip, RandomContrast
+from albumentations import PadIfNeeded, CenterCrop, HorizontalFlip
 
 
 class ThreadsafeIter(object):
@@ -21,13 +19,6 @@ class ThreadsafeIter(object):
     def __next__(self):
         with self.lock:
             return next(self.it)
-
-
-@contextmanager
-def poolcontext(*args, **kwargs):
-    pool = multiprocessing.Pool(*args, **kwargs)
-    yield pool
-    pool.terminate()
 
 
 def freeze_model(model, freeze_before_layer):
@@ -62,47 +53,23 @@ def do_tta(img, TTA, preprocess):
 
             imgs.append(preprocess(im))
 
-    elif TTA == 'flip_brightness':
-        augmentation = HorizontalFlip(p=1)
-        data = {'image': img}
-        img2 = augmentation(**data)['image']
-
-        augmentation = RandomContrast(p=1, limit=0.2)
-        data = {'image': img}
-        img3 = augmentation(**data)['image']
-
-        # img3 = np.roll(img, 10, axis=1)
-
-        for im in [img, img2, img3]:
-            im = np.array(im, np.float32)
-
-            im = cv2.resize(im, (args.resize_size, args.resize_size))
-            augmentation = PadIfNeeded(min_height=args.input_size, min_width=args.input_size, p=1.0, border_mode=4)
-            data = {"image": im}
-            im = augmentation(**data)["image"]
-            im = np.array(im, np.float32)
-
-            imgs.append(preprocess(im))
-
     return imgs
 
 
-def undo_tta(imgs, TTA, preprocess):
+def undo_tta(imgs, TTA):
     part = []
     for img in imgs:
         augmentation = CenterCrop(height=args.resize_size, width=args.resize_size, p=1.0)
         data = {"image": img}
         prob = augmentation(**data)["image"]
-        # prob = cv2.resize(prob, (args.initial_size, args.initial_size), interpolation = cv2.INTER_AREA)
         prob = cv2.resize(prob, (args.initial_size, args.initial_size))
 
         part.append(prob)
 
-    augmentation = HorizontalFlip(p=1)
-    data = {'image': part[1]}
-    part[1] = augmentation(**data)['image']
-
-    # part[2] = np.roll(part[2], 91, axis=1)
+    if TTA == 'flip':
+        augmentation = HorizontalFlip(p=1)
+        data = {'image': part[1]}
+        part[1] = augmentation(**data)['image']
 
     part = np.mean(np.array(part), axis=0)
 
@@ -188,8 +155,6 @@ def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', prepr
 
         total = 0
         for idx in range(end - start):
-            part = []
-
             part = undo_tta(preds[total:total + augment_number_per_image], TTA, preprocess)
             total += augment_number_per_image
 
@@ -201,51 +166,7 @@ def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', prepr
     return rles
 
 
-def postprocessing(final_pred):
-    # morphological closing
-    kernel = np.ones((3, 3), np.uint8)
-    final_pred = cv2.morphologyEx(np.array(final_pred, dtype=np.uint8) * 255, cv2.MORPH_CLOSE, kernel) / 255
-
-    #     #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    #     kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
-    #     final_pred = cv2.morphologyEx(np.array(final_pred,dtype=np.uint8)*255, cv2.MORPH_CLOSE, kernel)/255
-
-    #     kernel = np.ones((5,3),np.uint8)
-    #     final_pred = cv2.morphologyEx(np.array(final_pred,dtype=np.uint8)*255, cv2.MORPH_CLOSE, kernel)/255
-
-    # Connected components:
-    # find all your connected components (white blobs in your image)
-    nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(
-        np.array(final_pred, dtype=np.uint8) * 255, connectivity=8)
-    # connectedComponentswithStats yields every seperated component with information on each of them, such as size
-    # the following part is just taking out the background which is also considered a component, but most of the time we don't want that.
-    sizes = stats[1:, -1];
-    nb_components = nb_components - 1
-
-    # minimum size of particles we want to keep (number of pixels)
-    # here, it's a fixed value, but you can set it as you want, eg the mean of the sizes or whatever
-    min_size = 5
-
-    # your answer image
-    final_pred = np.zeros((output.shape))
-    # for every component in the image, you keep it only if it's above min_size
-    for i in range(0, nb_components):
-        if sizes[i] >= min_size:
-            final_pred[output == i + 1] = 1
-
-    # Rectangles
-    #     if (final_pred.sum() > 0) and np.all(np.sum(np.abs(final_pred-final_pred[-1])) < 10) and np.any(final_pred[-1]!=1):
-    #         final_pred = np.array([list(final_pred[-1]),]*101)
-    #         #final_pred = np.array([list(np.mean(final_pred,-1)),]*101)
-
-    num_of_pixel_in_mask = final_pred.sum()
-    if num_of_pixel_in_mask <= 5:
-        final_pred = np.zeros(final_pred.shape)
-
-    return final_pred
-
-
-def ensemble(model_dirs, folds, ids, thr, classification, phalanx_dicts=None, weights=None, inner_weights=None):
+def ensemble(model_dirs, folds, ids, thr, phalanx_dicts=None, weights=None, inner_weights=None):
     rles = []
     predicted_masks = {}
     predicted_probs = {}
@@ -257,7 +178,6 @@ def ensemble(model_dirs, folds, ids, thr, classification, phalanx_dicts=None, we
         preds = []
         for d, w in zip(model_dirs, weights):
             pred_folds = []
-            prob_all_folds = 1
             for fold in folds:
                 path = os.path.join(d, 'fold_{}'.format(fold))
                 mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
@@ -270,10 +190,8 @@ def ensemble(model_dirs, folds, ids, thr, classification, phalanx_dicts=None, we
             preds.append(np.mean(np.array(pred_folds, np.float32), axis=0) * w)
 
         if phalanx_dicts is None:
-            # final_pred = np.mean(np.array(preds), axis=0)
             final_pred = np.sum(np.array(preds), axis=0) / sum(weights)
         else:
-            # final_pred = np.mean(np.array(preds), axis=0)
 
             if len(model_dirs) == 0:
                 final_pred = []
@@ -288,8 +206,6 @@ def ensemble(model_dirs, folds, ids, thr, classification, phalanx_dicts=None, we
 
         mask = final_pred > thr
 
-        # mask = postprocessing(mask)
-
         rle = RLenc(mask)
         rles.append(rle)
 
@@ -299,7 +215,7 @@ def ensemble(model_dirs, folds, ids, thr, classification, phalanx_dicts=None, we
     return rles, predicted_masks, predicted_probs
 
 
-def evaluate(model_dirs, ids, thr, classification, snapshots, leaks_dict=None, weights=None):
+def evaluate(model_dirs, ids, thr, snapshots, weights=None):
     metrics = defaultdict(list)
 
     if weights is None:
@@ -320,11 +236,6 @@ def evaluate(model_dirs, ids, thr, classification, snapshots, leaks_dict=None, w
 
         final_pred = np.sum(np.array(preds), axis=0) / sum(weights)
         final_pred = final_pred > thr
-        # final_pred = postprocessing(final_pred)
-
-        if leaks_dict:
-            if img_id in leaks_dict.keys():
-                final_pred = leaks_dict[img_id]
 
         true_mask = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
         true_mask = np.array(true_mask / 255, np.float32)
@@ -334,44 +245,3 @@ def evaluate(model_dirs, ids, thr, classification, snapshots, leaks_dict=None, w
         metrics['jacard'].append(jacard_coef_np(true_mask, final_pred))
 
     return metrics
-
-
-def generate_pseudolabels(model_dirs, folds, ids, thr, phalanx_dict=None, weights=None):
-    pseudolabels = {}
-
-    if weights is None:
-        weights = [1] * len(model_dirs)
-
-    for img_id in tqdm(ids):
-        preds = []
-        for d, w in zip(model_dirs, weights):
-            pred_folds = []
-            prob_all_folds = 1
-            for fold in folds:
-                path = os.path.join(d, 'fold_{}'.format(fold))
-                mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-
-                img = cv2.imread(os.path.join(args.test_folder, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-                if np.unique(img).shape[0] == 1:
-                    pred_folds.append(np.zeros(mask.shape))
-                else:
-                    pred_folds.append(np.array(mask / 255, np.float32))
-
-            preds.append(np.mean(np.array(pred_folds, np.float32), axis=0) * w)
-
-        if phalanx_dict is None:
-            # final_pred = np.mean(np.array(preds), axis=0)
-            final_pred = np.sum(np.array(preds), axis=0) / sum(weights)
-        else:
-            # final_pred = [np.mean(np.array(preds), axis=0)]
-            final_pred = [np.sum(np.array(preds), axis=0) / sum(weights)]
-            final_pred.append(phalanx_dict[img_id])
-            final_pred = np.mean(np.array(final_pred), axis=0)
-        confidence = (np.sum(final_pred < 0.2) + np.sum(final_pred > 0.8)) / (101 ** 2)
-
-        mask = final_pred > thr
-
-        pseudolabels[img_id] = (confidence, mask * 255)
-
-    return pseudolabels
-
