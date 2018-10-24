@@ -16,7 +16,7 @@ arg('--batch_size', type=int, default=24)
 
 arg('--loss_function', default='bce_jacard')
 arg('--optimizer', default='rmsprop')
-arg('--augmentation_name', default='valid_plus')
+arg('--augmentation_name', default='valid')
 arg('--augmentation_prob', type=float, default=1.0)
 arg('--network', default='unet_resnet_50')
 arg('--alias', default='_exp_0_160_192_snapshot_50_epochs')

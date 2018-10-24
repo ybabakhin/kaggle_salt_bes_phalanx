@@ -3,32 +3,11 @@ import tensorflow as tf
 import numpy as np
 
 
-def jacard_coef(y_true, y_pred, smooth=1.0):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) - intersection + smooth)
-
-
-def jacard_coef_np(y_true, y_pred, smooth=1.0):
-    y_true_f = y_true.flatten()
-    y_pred_f = y_pred.flatten()
-    intersection = np.sum(y_true_f * y_pred_f)
-    return (intersection + smooth) / (np.sum(y_true_f) + np.sum(y_pred_f) - intersection + smooth)
-
-
 def dice_coef(y_true, y_pred, smooth=1.0):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
     return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-
-
-def dice_coef_np(y_true, y_pred, smooth=1.0):
-    y_true_f = y_true.flatten()
-    y_pred_f = y_pred.flatten()
-    intersection = np.sum(y_true_f * y_pred_f)
-    return (2. * intersection + smooth) / (np.sum(y_true_f) + np.sum(y_pred_f) + smooth)
 
 
 def binary_crossentropy(y, p):
@@ -41,23 +20,6 @@ def dice_coef_loss(y_true, y_pred):
 
 def dice_coef_loss_bce(y_true, y_pred, dice=0.5, bce=0.5):
     return binary_crossentropy(y_true, y_pred) * bce + dice_coef_loss(y_true, y_pred) * dice
-
-
-def jacard_coef_loss(y_true, y_pred):
-    return 1 - jacard_coef(y_true, y_pred)
-
-
-def jacard_coef_loss_bce(y_true, y_pred, jacard=0.5, bce=0.5):
-    return binary_crossentropy(y_true, y_pred) * bce + jacard_coef_loss(y_true, y_pred) * jacard
-
-
-def jacard_dice_bce_loss(y_true, y_pred, jacard=0.5, bce=0.3, dice=0.2):
-    return binary_crossentropy(y_true, y_pred) * bce + jacard_coef_loss(y_true, y_pred) * jacard + dice_coef_loss(
-        y_true, y_pred) * dice
-
-
-def bce_dice_no_empty(y_true, y_pred):
-    return K.max(K.max(y_true, axis=0), axis=1) * (dice_coef_loss_bce(y_true, y_pred, dice=0.5, bce=0.5))
 
 
 def Kaggle_IoU_Precision(y_true, y_pred, threshold=0.5):
@@ -232,22 +194,7 @@ def flatten_binary_scores(scores, labels, ignore=None):
 
 
 def make_loss(loss_name):
-    if loss_name == 'crossentropy':
-        return K.binary_crossentropy
-
-    elif loss_name == 'jacard':
-        return jacard_coef_loss
-
-    elif loss_name == 'bce_jacard':
-        def loss(y, p):
-            return jacard_coef_loss_bce(y, p, jacard=0.5, bce=0.5)
-
-        return loss
-
-    elif loss_name == 'dice':
-        return dice_coef_loss
-
-    elif loss_name == 'bce_dice':
+    if loss_name == 'bce_dice':
         def loss(y, p):
             return dice_coef_loss_bce(y, p, dice=0.5, bce=0.5)
 
@@ -256,12 +203,6 @@ def make_loss(loss_name):
     elif loss_name == 'lovasz':
         def loss(y, p):
             return lovasz_hinge(p, y, per_image=True, ignore=None)
-
-        return loss
-
-    elif loss_name == 'bce_jacard_dice':
-        def loss(y, p):
-            return jacard_dice_bce_loss(y, p, jacard=0.3, bce=0.4, dice=0.3)
 
         return loss
 

@@ -1,9 +1,7 @@
 import os
 import numpy as np
 import cv2
-from tqdm import tqdm_notebook, tqdm
-from collections import defaultdict
-from losses import iou_metric, jacard_coef_np, dice_coef_np
+from tqdm import tqdm
 import threading
 from params import args
 from albumentations import PadIfNeeded, CenterCrop, HorizontalFlip
@@ -133,9 +131,6 @@ def _get_augmentations_count(TTA=''):
     elif TTA == 'flip':
         return 2
 
-    elif TTA == 'flip_brightness':
-        return 3
-
     else:
         'No Such TTA'
 
@@ -213,35 +208,3 @@ def ensemble(model_dirs, folds, ids, thr, phalanx_dicts=None, weights=None, inne
         predicted_masks[img_id] = mask * 255
 
     return rles, predicted_masks, predicted_probs
-
-
-def evaluate(model_dirs, ids, thr, snapshots, weights=None):
-    metrics = defaultdict(list)
-
-    if weights is None:
-        weights = [1] * len(model_dirs)
-
-    for img_id in tqdm(ids):
-        preds = []
-        for d, w in zip(model_dirs, weights):
-            for snap in snapshots:
-                path = os.path.join(d, snap)
-                mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-
-                img = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-                if np.unique(img).shape[0] == 1:
-                    preds.append(np.zeros(mask.shape))
-                else:
-                    preds.append(np.array(mask / 255, np.float32) * w)
-
-        final_pred = np.sum(np.array(preds), axis=0) / sum(weights)
-        final_pred = final_pred > thr
-
-        true_mask = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-        true_mask = np.array(true_mask / 255, np.float32)
-
-        metrics['iout'].append(iou_metric(true_mask, final_pred))
-        metrics['dice'].append(dice_coef_np(true_mask, final_pred))
-        metrics['jacard'].append(jacard_coef_np(true_mask, final_pred))
-
-    return metrics

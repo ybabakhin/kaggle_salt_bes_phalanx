@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import os
 import gc
 from keras import backend as K
@@ -31,17 +30,17 @@ def main():
 
         model.load_weights(weights_path)
 
-        # SAVE TEST PREDICTIONS
+        # Save test predictions
         dir_path = os.path.join(MODEL_PATH, args.prediction_folder.format(fold))
         os.system("mkdir {}".format(dir_path))
-        pred = predict_test(model=model,
-                            preds_path=dir_path,
-                            oof=False,
-                            ids=test.id.values,
-                            batch_size=args.batch_size * 2,
-                            thr=0.5,
-                            TTA='flip',
-                            preprocess=preprocess)
+        predict_test(model=model,
+                     preds_path=dir_path,
+                     oof=False,
+                     ids=test.id.values,
+                     batch_size=args.batch_size * 2,
+                     thr=0.5,
+                     TTA='flip',
+                     preprocess=preprocess)
 
         gc.collect()
 

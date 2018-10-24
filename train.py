@@ -29,29 +29,32 @@ def main():
             os.system("mkdir {}".format(MODEL_PATH))
             os.system("cp train_all.sh {}".format(MODEL_PATH))
 
+        # Train/Validation sampling
         df_train = train[train.fold != fold].copy().reset_index(drop=True)
+        df_valid = train[train.fold == fold].copy().reset_index(drop=True)
 
+        # Train on pseudolabels only
         if args.pseudolabels_dir != '':
             pseudolabels = pd.read_csv(args.pseudolabels_csv)
             df_train = pseudolabels.sample(frac=1, random_state=13).reset_index(drop=True)
 
-        df_valid = train[train.fold == fold].copy().reset_index(drop=True)
-
+        # Keep only non-black images
         ids_train, ids_valid = df_train[df_train.unique_pixels > 1].id.values, df_valid[
             df_valid.unique_pixels > 1].id.values
 
         print('Training on {} samples'.format(ids_train.shape[0]))
         print('Validating on {} samples'.format(ids_valid.shape[0]))
 
-        # Initialize Model
+        # Initialize model
         weights_path = os.path.join(MODEL_PATH, 'fold_{fold}.hdf5'.format(fold=fold))
         print(weights_path.split('/')[-2:])
 
+        # Get the model
         model, preprocess = get_model(args.network,
                                       input_shape=(args.input_size, args.input_size, 3),
                                       freeze_encoder=args.freeze_encoder)
-        print(model.summary())
 
+        # LB metric threshold
         def lb_metric(y_true, y_pred):
             return Kaggle_IoU_Precision(y_true, y_pred, threshold=0 if args.loss_function == 'lovasz' else 0.5)
 
@@ -65,10 +68,10 @@ def main():
             print('Loading weights from {}'.format(wp))
             model.load_weights(wp, by_name=True)
 
-        augs = get_augmentations(args.augmentation_name,
-                                 p=args.augmentation_prob,
-                                 input_shape=(args.input_size, args.input_size, 3))
+        # Get augmentations
+        augs = get_augmentations(args.augmentation_name, p=args.augmentation_prob)
 
+        # Data generator
         dg = SegmentationDataGenerator(input_shape=(args.input_size, args.input_size),
                                        batch_size=args.batch_size,
                                        augs=augs,
@@ -77,6 +80,7 @@ def main():
         train_generator = dg.train_batch_generator(ids_train)
         validation_generator = dg.evaluation_batch_generator(ids_valid)
 
+        # Get callbacks
         callbacks = get_callback(args.callback,
                                  weights_path=weights_path,
                                  fold=fold)
