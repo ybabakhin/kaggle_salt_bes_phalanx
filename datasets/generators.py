@@ -39,7 +39,6 @@ class SegmentationDataGenerator:
         img = self.preprocess(img)
 
         mask = np.array(mask / 255., np.float32)
-        # mask = np.where(mask < 0.5, 0, 1)
         if len(mask.shape) < 3:
             mask = np.expand_dims(mask, axis=2)
         return (img, mask)
@@ -61,7 +60,6 @@ class SegmentationDataGenerator:
         img = self.preprocess(img)
 
         mask = np.array(mask / 255., np.float32)
-        # mask = np.where(mask < 0.5, 0, 1)
         if len(mask.shape) < 3:
             mask = np.expand_dims(mask, axis=2)
 

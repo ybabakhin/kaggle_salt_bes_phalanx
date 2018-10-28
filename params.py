@@ -15,7 +15,6 @@ arg('--resize_size', type=int, default=160)
 arg('--batch_size', type=int, default=24)
 
 arg('--loss_function', default='bce_jacard')
-arg('--optimizer', default='rmsprop')
 arg('--augmentation_name', default='valid')
 arg('--augmentation_prob', type=float, default=1.0)
 arg('--network', default='unet_resnet_50')
@@ -31,7 +30,6 @@ arg('--masks_dir', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/
 arg('--test_folder', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/test/images/')
 arg('--folds_csv', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/train_proc_v2_gr.csv')
 arg('--pseudolabels_csv', default='/home/p/babakhin/Branding/salt_old/kaggle-salt/data/pseudolabels_v2.csv')
-arg('--out_root_dir', default='submissions/')
 
 arg('--initial_size', type=int, default=101)
 arg('--num_workers', type=int, default=12)

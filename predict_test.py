@@ -38,7 +38,6 @@ def main():
                      oof=False,
                      ids=test.id.values,
                      batch_size=args.batch_size * 2,
-                     thr=0.5,
                      TTA='flip',
                      preprocess=preprocess)
 

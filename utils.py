@@ -85,45 +85,6 @@ def read_image_test(id, TTA, oof, preprocess):
     return imgs
 
 
-# Source https://www.kaggle.com/bguberfain/unet-with-depth
-def RLenc(img, order='F', format=True):
-    """
-    img is binary mask image, shape (r,c)
-    order is down-then-right, i.e. Fortran
-    format determines if the order needs to be preformatted (according to submission rules) or not
-
-    returns run length as an array or string (if format is True)
-    """
-    bytes = img.reshape(img.shape[0] * img.shape[1], order=order)
-    runs = []  ## list of run lengths
-    r = 0  ## the current run length
-    pos = 1  ## count starts from 1 per WK
-    for c in bytes:
-        if (c == 0):
-            if r != 0:
-                runs.append((pos, r))
-                pos += r
-                r = 0
-            pos += 1
-        else:
-            r += 1
-
-    # if last run is unsaved (i.e. data ends with 1)
-    if r != 0:
-        runs.append((pos, r))
-        pos += r
-        r = 0
-
-    if format:
-        z = ''
-
-        for rr in runs:
-            z += '{} {} '.format(rr[0], rr[1])
-        return z[:-1]
-    else:
-        return runs
-
-
 def _get_augmentations_count(TTA=''):
     if TTA == '':
         return 1
@@ -135,9 +96,9 @@ def _get_augmentations_count(TTA=''):
         'No Such TTA'
 
 
-def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', preprocess=None):
+def predict_test(model, preds_path, oof, ids, batch_size, TTA='', preprocess=None):
     num_images = ids.shape[0]
-    rles = []
+
     for start in tqdm(range(0, num_images, batch_size)):
         end = min(start + batch_size, num_images)
 
@@ -150,61 +111,8 @@ def predict_test(model, preds_path, oof, ids, batch_size, thr=0.5, TTA='', prepr
 
         total = 0
         for idx in range(end - start):
-            part = undo_tta(preds[total:total + augment_number_per_image], TTA, preprocess)
+            part = undo_tta(preds[total:total + augment_number_per_image], TTA)
             total += augment_number_per_image
 
             cv2.imwrite(os.path.join(preds_path, str(ids[start + idx]) + '.png'), np.array(part * 255, np.uint8))
-            mask = part > thr
-            rle = RLenc(mask)
-            rles.append(rle)
 
-    return rles
-
-
-def ensemble(model_dirs, folds, ids, thr, phalanx_dicts=None, weights=None, inner_weights=None):
-    rles = []
-    predicted_masks = {}
-    predicted_probs = {}
-
-    if weights is None:
-        weights = [1] * len(model_dirs)
-
-    for img_id in tqdm(ids):
-        preds = []
-        for d, w in zip(model_dirs, weights):
-            pred_folds = []
-            for fold in folds:
-                path = os.path.join(d, 'fold_{}'.format(fold))
-                mask = cv2.imread(os.path.join(path, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-
-                img = cv2.imread(os.path.join(args.test_folder, '{}.png'.format(img_id)), cv2.IMREAD_GRAYSCALE)
-                if np.unique(img).shape[0] == 1:
-                    pred_folds.append(np.zeros(mask.shape))
-                else:
-                    pred_folds.append(np.array(mask / 255, np.float32))
-            preds.append(np.mean(np.array(pred_folds, np.float32), axis=0) * w)
-
-        if phalanx_dicts is None:
-            final_pred = np.sum(np.array(preds), axis=0) / sum(weights)
-        else:
-
-            if len(model_dirs) == 0:
-                final_pred = []
-            else:
-                final_pred = [np.sum(np.array(preds), axis=0) / sum(weights) * inner_weights[0]]
-
-            i = 1
-            for phalanx_dict in phalanx_dicts:
-                final_pred.append(phalanx_dict[img_id] * inner_weights[i])
-                i += 1
-            final_pred = np.sum(np.array(final_pred), axis=0) / sum(inner_weights)
-
-        mask = final_pred > thr
-
-        rle = RLenc(mask)
-        rles.append(rle)
-
-        predicted_probs[img_id] = final_pred
-        predicted_masks[img_id] = mask * 255
-
-    return rles, predicted_masks, predicted_probs
