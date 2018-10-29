@@ -1,18 +1,16 @@
-from tqdm import tqdm
 import argparse
 import numpy as np
 import pandas as pd
 
-from utils import RLenc
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', default='res34', type=str, help='Model version')
-parser.add_argument('--save_pred', default='../pred/', type=str, help='prediction save space')
+parser.add_argument('--save_pred', default='pred/', type=str, help='prediction save space')
+parser.add_argument('--pred_path', default='../predictions/pred.npy', type=str, help='final prediction')
 args = parser.parse_args()
 args.save_pred += args.model + '/'
 
-train_id = pd.read_csv('../input/train.csv')['id'].values
-depth_id = pd.read_csv('../input/depths.csv')['id'].values
+train_id = pd.read_csv('../data/train.csv')['id'].values
+depth_id = pd.read_csv('../data/depths.csv')['id'].values
 test_id = np.setdiff1d(depth_id, train_id)
 
 if __name__ == '__main__':
@@ -23,11 +21,4 @@ if __name__ == '__main__':
     e = np.load(args.save_pred +'pred4.npy')
 
     a = (a+b+c+d+e) / 5.0
-    np.save(args.save+'all_fold_prediction', a)
-    
-    #a = np.where(a >= 0.52, 1, 0)
-    #pred_dict = {fn: RLenc(np.round(a[i])) for i , fn in tqdm(enumerate(test_id))}
-    #sub = pd.DataFrame.from_dict(pred_dict,orient='index')
-    #sub.index.names = ['id']
-    #sub.columns = ['rle_mask']
-    #sub.to_csv('./submission_' + args.model + '.csv')
+    np.save(args.pred_path, a)

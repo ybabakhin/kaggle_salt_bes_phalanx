@@ -20,37 +20,34 @@ parser.add_argument('--batch_size', default=18, type=int, help='Batch size for t
 parser.add_argument('--epoch', default=300, type=int, help='Number of training epochs')
 parser.add_argument('--snapshot', default=5, type=int, help='Number of snapshots per fold')
 parser.add_argument('--cuda', default=True, type=bool, help='Use cuda to train model')
-parser.add_argument('--save_weight', default='../weights/stage3/', type=str, help='weight save space')
-parser.add_argument('--save_pred', default='../pred/', type=str, help='prediction save space')
+parser.add_argument('--save_weight', default='weights/stage3/', type=str, help='weight save space')
+parser.add_argument('--save_pred', default='preds/', type=str, help='prediction save space')
 parser.add_argument('--max_lr', default=0.01, type=float, help='max learning rate')
 parser.add_argument('--min_lr', default=0.001, type=float, help='min learning rate')
 parser.add_argument('--fold', default='0', type=str, help='number of split fold')
 parser.add_argument('--start_snap', default=0, type=int)
 parser.add_argument('--end_snap', default=3, type=int)
 
-
 args = parser.parse_args()
-fine_size = args.fine_size+args.pad_left+args.pad_right
+fine_size = args.fine_size + args.pad_left + args.pad_right
 args.weight_name = 'model_' + str(fine_size) + '_' + args.model
 args.save_pred += args.model + '/'
 
 device = torch.device('cuda' if args.cuda else 'cpu')
 
-train_id = pd.read_csv('../input/train.csv')['id'].values
-depth_id = pd.read_csv('../input/depths.csv')['id'].values
+train_id = pd.read_csv('../data/train.csv')['id'].values
+depth_id = pd.read_csv('../data/depths.csv')['id'].values
 test_id = np.setdiff1d(depth_id, train_id)
 
-
-
 if __name__ == '__main__':
-    #Load test data
+    # Load test data
     image_test = testImageFetch(test_id)
-    
+
     pred_null = []
     pred_flip = []
     pred = np.zeros((18000, args.fine_size, args.fine_size), dtype=np.float32)
-    
-    #Get model
+
+    # Get model
     if args.model == 'res34v3':
         salt = Res34Unetv3()
     elif args.model == 'res34v4':
@@ -58,29 +55,30 @@ if __name__ == '__main__':
     elif args.model == 'res34v5':
         salt = Res34Unetv5()
     salt = salt.to(device)
-    
-    #Start prediction
-    for step in range(args.start_snap, args.end_snap+1): 
-        #Load weight
+
+    # Start prediction
+    for step in range(args.start_snap, args.end_snap + 1):
+        # Load weight
         param = torch.load(args.save_weight + args.weight_name + args.fold + str(step) + '.pth')
         salt.load_state_dict(param)
-        
-        #Create DataLoader
+
+        # Create DataLoader
         test_data = SaltDataset(image_test, fine_size=args.fine_size, pad_left=args.pad_left, pad_right=args.pad_right)
         test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
-        
-        #Prediction with no TTA test data
+
+        # Prediction with no TTA test data
         salt.eval()
         for images in tqdm(test_loader, total=len(test_loader)):
             images = images.to(device)
             with torch.set_grad_enabled(False):
                 pred = salt(images)
                 pred = nn.Sigmoid()(pred).squeeze(1).cpu().numpy()
-            pred = pred[:, args.pad_left:args.fine_size+args.pad_left, args.pad_left:args.fine_size+args.pad_left]
+            pred = pred[:, args.pad_left:args.fine_size + args.pad_left, args.pad_left:args.fine_size + args.pad_left]
             pred_null.append(pred)
-            
-        #Prediction with horizontal flip TTA test data
-        test_data = SaltDataset(image_test, is_tta=True, fine_size=args.fine_size, pad_left=args.pad_left, pad_right=args.pad_right)
+
+        # Prediction with horizontal flip TTA test data
+        test_data = SaltDataset(image_test, is_tta=True, fine_size=args.fine_size, pad_left=args.pad_left,
+                                pad_right=args.pad_right)
         test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
         salt.eval()
         for images in tqdm(test_loader, total=len(test_loader)):
@@ -88,15 +86,15 @@ if __name__ == '__main__':
             with torch.set_grad_enabled(False):
                 pred = salt(images)
                 pred = nn.Sigmoid()(pred).squeeze(1).cpu().numpy()
-            pred = pred[:, args.pad_left:args.fine_size+args.pad_left, args.pad_left:args.fine_size+args.pad_left]
+            pred = pred[:, args.pad_left:args.fine_size + args.pad_left, args.pad_left:args.fine_size + args.pad_left]
             for idx in range(len(pred)):
                 pred[idx] = cv2.flip(pred[idx], 1)
             pred_flip.append(pred)
-        
+
         pred_null = np.array(pred_null).reshape(-1, args.fine_size, args.fine_size)
         pred_flip = np.array(pred_flip).reshape(-1, args.fine_size, args.fine_size)
         pred += (pred_null + pred_flip) / 2
-    
+
     pred /= (args.end_snap - args.start_snap + 1)
-    #Save prediction 
-    np.save(args.save_pred+ 'pred' + args.fold, pred)
+    # Save prediction
+    np.save(args.save_pred + 'pred' + args.fold, pred)

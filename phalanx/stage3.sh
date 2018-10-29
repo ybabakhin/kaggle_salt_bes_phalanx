@@ -8,12 +8,12 @@ python train_pseudo.py \
 --epoch 150 \
 --snapshot 3 \
 --cuda True \
--save_weight ../weights/stage3/ \
+-save_weight weights/stage3/ \
 --max_lr 0.01 \
 --min_lr 0.001 \
 --momentum 0.9 \
 --weight_decay 1e-4 \
---pseudo_path ../input/pseudolabels_v2/
+--pseudo_path ../data/pseudolabels_v2/
 
 #train stage3 model with train data
 python train_cv.py \
@@ -25,7 +25,7 @@ python train_cv.py \
 --epoch 200 \
 --snapshot 4 \
 --cuda True \
---save_weight ../weights/stage3/ \
+--save_weight weights/stage3/ \
 --max_lr 0.01 \
 --min_lr 0.001 \
 --momentum 0.9 \
@@ -40,7 +40,7 @@ python precisioncv.py \
 --batch_size 32 \
 --cuda True \
 --fold 0 \
---save_weight ../weights/stage3/ \
+--save_weight weights/stage3/ \
 --start_snap 0 \
 --end_snap 3 \
 
@@ -52,7 +52,7 @@ python precisioncv.py \
 --batch_size 32 \
 --cuda True \
 --fold 1 \
---save_weight ../weights/stage3/ \
+--save_weight weights/stage3/ \
 --start_snap 0 \
 --end_snap 3 \
 
@@ -64,7 +64,7 @@ python precisioncv.py \
 --batch_size 32 \
 --cuda True \
 --fold 2 \
---save_weight ../weights/stage3/ \
+--save_weight weights/stage3/ \
 --start_snap 0 \
 --end_snap 3 \
 
@@ -77,7 +77,7 @@ python precisioncv.py \
 --batch_size 32 \
 --cuda True \
 --fold 3 \
---save_weight ../weights/stage3/ \
+--save_weight weights/stage3/ \
 --start_snap 0 \
 --end_snap 2 \
 
@@ -90,10 +90,11 @@ python precisioncv.py \
 --batch_size 32 \
 --cuda True \
 --fold 4 \
---save_weight ../weights/stage3/ \
+--save_weight weights/stage3/ \
 --start_snap 0 \
 --end_snap 3 \
 
 #submit ensemble prediction
-python submit.py \
+python submit34.py \
 --model res34v5
+--pred_path ../predictions/phalanx_stage_3.npy

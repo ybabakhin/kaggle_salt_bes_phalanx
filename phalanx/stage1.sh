@@ -7,8 +7,8 @@ python train_cv.py \
 --batch_size 18 \
 --epoch 300 \
 --snapshot 6 \
--cuda True \
---save_weight ../weights/stage1/ \
+--cuda True \
+--save_weight weights/stage1/ \
 --max_lr 0.012 \
 --min_lr 0.001 \
 --momentum 0.9 \
@@ -24,7 +24,7 @@ python precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 0 \
---save_weight ../weights/stage1/ \
+--save_weight weights/stage1/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -37,7 +37,7 @@ python precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 1
---save_weight ../weights/stage1/ \
+--save_weight weights/stage1/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -50,7 +50,7 @@ python precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 2
---save_weight ../weights/stage1/ \
+--save_weight weights/stage1/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -63,7 +63,7 @@ python precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 3
---save_weight ../weights/stage1/ \
+--save_weight weights/stage1/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -76,11 +76,12 @@ python precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 4
---save_weight ../weights/stage1/ \
+--save_weight weights/stage1/ \
 --start_snap 1 \
 --end_snap 5 \
 
 
 #submit ensemble prediction
-python submit.py \
+python submit34.py \
 --model res34v4
+--pred_path ../predictions/phalanx_stage_1.npy
