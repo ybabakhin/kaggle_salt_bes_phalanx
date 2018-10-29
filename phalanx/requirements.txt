@@ -1,0 +1,7 @@
+numpy==
+pandas==
+cv2==
+
+pytorch==
+torchvision==
+fast_progress==
