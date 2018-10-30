@@ -13,6 +13,7 @@ python train_cv.py \
 --min_lr 0.001 \
 --momentum 0.9 \
 --weight_decay 1e-4 \
+--is_pseudo True \
 
 
 #prediction with stage2 model

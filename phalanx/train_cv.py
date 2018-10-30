@@ -27,6 +27,7 @@ parser.add_argument('--max_lr', '--learning-rate', default=0.01, type=float, hel
 parser.add_argument('--min_lr', '--learning-rate', default=0.001, type=float, help='min learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum for SGD')
 parser.add_argument('--weight_decay', default=1e-4, type=float, help='Weight decay for SGD')
+parser.add_argument('--is_pseudo', default=False, type=bool, help='Use pseudolabels or not')
 
 args = parser.parse_args()
 fine_size = args.fine_size + args.pad_left + args.pad_right
@@ -53,7 +54,11 @@ def test(test_loader, model):
     for inputs, masks in test_loader:
         inputs, masks = inputs.to(device), masks.to(device)
         with torch.set_grad_enabled(False):
-            outputs = model(inputs)
+            if args.is_pseudo:
+                outputs, _, _ = model(inputs)
+            else:
+                outputs = model(inputs)
+            
             outputs = outputs[:, :, args.pad_left:args.pad_left + args.fine_size,
                       args.pad_left:args.pad_left + args.fine_size].contiguous()
             loss = lovasz_hinge(outputs.squeeze(1), masks.squeeze(1))
@@ -80,8 +85,15 @@ def train(train_loader, model):
         optimizer.zero_grad()
 
         with torch.set_grad_enabled(True):
-            logit = model(inputs)
-            loss = lovasz_hinge(logit.squeeze(1), masks.squeeze(1))
+            if args.is_pseudo:
+                logit, logit_pixel, logit_image = model(inputs)
+                loss1 = lovasz_hinge(logit.squeeze(1), masks.squeeze(1))
+                loss2 = nn.BCELoss()(logit_image, labels)
+                loss3 = lovasz_hinge2(logit_pixel.squeeze(1), masks.squeeze(1))
+                loss = loss1 + loss2 + loss3
+            else:
+                logit = model(inputs)
+                loss = lovasz_hinge(logit.squeeze(1), masks.squeeze(1))
 
             loss.backward()
             optimizer.step()
@@ -118,6 +130,13 @@ if __name__ == '__main__':
         val_id = fold[idx]
         X_train, y_train = trainImageFetch(train_id)
         X_val, y_val = trainImageFetch(val_id)
+
+        #Load pseudo labels for stage2
+        if args.is_pseudo:
+            pseudo_id = np.load('../data/stage2_fold'+str(idx)+'.npy')
+            X_pseudo, y_pseudo = semi_trainImageFetch('../data/pseudolabels/', pseudo_id)
+            X_train = np.concatenate((X_train, X_pseudo))
+            y_train = np.concatenate((y_train, y_pseudo))
 
         train_data = SaltDataset(X_train, y_train, is_train=True, fine_size=args.fine_size, pad_left=args.pad_left,
                                  pad_right=args.pad_right)

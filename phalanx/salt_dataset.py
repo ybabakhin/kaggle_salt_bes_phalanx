@@ -138,8 +138,12 @@ def trainImageFetch(images_id):
     return image_train, mask_train
 
 
-def semi_trainImageFetch(pseudo_path):
-    images_id = os.listdir(pseudo_path)
+def semi_trainImageFetch(pseudo_path, list_id=None):
+    if list_id == None:
+        images_id = os.listdir(pseudo_path)
+    else:
+        images_id = list_id
+        
     image_train = np.zeros((len(images_id), 101, 101), dtype=np.float32)
     mask_train = np.zeros((len(images_id), 101, 101), dtype=np.float32)
 
