@@ -20,7 +20,6 @@ arg('--augmentation_prob', type=float, default=1.0)
 arg('--network', default='unet_resnet_50')
 arg('--alias', default='_exp_0_160_192_snapshot_50_epochs')
 arg('--callback', default='snapshot')
-arg('--freeze_encoder', type=int, default=0)
 
 arg('--models_dir', default='weights/')
 arg('--data_root', default='../data/')
