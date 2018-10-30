@@ -1,7 +1,7 @@
-numpy==
-pandas==
-cv2==
+numpy==1.14.3
+pandas==0.23.0
+cv2==3.4.3
 
-pytorch==
-torchvision==
-fast_progress==
+pytorch==0.4.0
+torchvision==0.2.1
+fast_progress==0.1.2
