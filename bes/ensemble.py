@@ -61,20 +61,23 @@ def read_phalanx_test(path):
         if ma > max_prob:
             max_prob = ma
 
-    print(min_prob, max_prob)
-    phalanx_df = pd.read_csv('res34_256_no_pseudo_real.csv')
+    train_id = pd.read_csv(os.path.join(args.data_root, 'train.csv'))['id'].values
+    depth_id = pd.read_csv(os.path.join(args.data_root, 'depths.csv'))['id'].values
+    test_id = np.setdiff1d(depth_id, train_id)
+
+    phalanx_df = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
+    phalanx_df['id'] = test_id
+
     phalanx_dict = {}
     for idx, row in phalanx_df.iterrows():
         phalanx_dict[row['id']] = (phalanx[idx] - min_prob) / (max_prob - min_prob)
-        # phalanx_dict[row['id']] = phalanx[idx]
 
     return phalanx_dict
 
 
 def ensemble(model_dirs, folds, ids, thr, phalanx_dicts=None, weights=None, inner_weights=None):
     rles = []
-    predicted_masks = {}
-    predicted_probs = {}
+    pseudolabels = {}
 
     if weights is None:
         weights = [1] * len(model_dirs)
@@ -109,15 +112,49 @@ def ensemble(model_dirs, folds, ids, thr, phalanx_dicts=None, weights=None, inne
                 i += 1
             final_pred = np.sum(np.array(final_pred), axis=0) / sum(inner_weights)
 
+        confidence = (np.sum(final_pred < 0.2) + np.sum(final_pred > 0.8))/(101**2)
         mask = final_pred > thr
+        pseudolabels[img_id] = (confidence, mask * 255)
 
         rle = RLenc(mask)
         rles.append(rle)
 
-        predicted_probs[img_id] = final_pred
-        predicted_masks[img_id] = mask * 255
+    return rles, pseudolabels
 
-    return rles, predicted_masks, predicted_probs
+
+def generate_pseudolabels(pseudolabels, pseudolabels_path='pseudolabels'):
+    pseudolabels_df = pd.DataFrame(pseudolabels).T
+    pseudolabels_df.columns = ['confidence', 'mask']
+
+    df_test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'), index_col='id')
+    depths = pd.read_csv(os.path.join(args.data_root, 'depths.csv'), index_col='id')
+    df_test = df_test.join(depths)
+    # Label suspicious images
+    dist = []
+    mask_pixels = []
+    for id in df_test.index:
+        img = cv2.imread(os.path.join(args.test_folder, '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
+        mask = pseudolabels_df.loc[id][1]
+        dist.append(np.unique(img).shape[0])
+        mask_pixels.append(np.sum(mask / 255))
+    df_test['unique_pixels'] = dist
+    df_test['mask_pixels'] = mask_pixels
+
+    df_test = df_test.join(pseudolabels_df)
+
+    for idx, row in df_test.iterrows():
+        cv2.imwrite(
+            os.path.join('../data/', pseudolabels_path, str(idx) + '.png'),
+            np.array(row['mask'], np.uint8))
+
+    df_test[['unique_pixels', 'mask_pixels', 'confidence']].sample(frac=1, random_state=123).to_csv(
+        os.path.join('../data/', pseudolabels_path + '.csv'))
+
+    pseudo = df_test[(df_test.confidence >= 0.9) & (df_test.unique_pixels > 1)].sample(frac=1, random_state=123)
+    pseudo['coverage_class'] = -1
+    pseudo['fold'] = -1
+    pseudo[['fold', 'unique_pixels', 'coverage_class']].to_csv(
+        os.path.join('../data/', pseudolabels_path + '_confident.csv'))
 
 
 def postprocessing():
@@ -156,8 +193,8 @@ def postprocessing():
 
     # DO NOT BREAK IN A SINGLE COLUMN. MAYBE AVERAGE OF KNOWN PREDICTIONS?
     leaks_dict = {}
-    for mos_csv in os.listdir('data/mos_numpy/'):
-        mos = pd.read_csv(os.path.join('data/mos_numpy/', mos_csv), header=None)
+    for mos_csv in os.listdir('../data/mos_numpy/'):
+        mos = pd.read_csv(os.path.join('../data/mos_numpy/', mos_csv), header=None)
         for col in range(mos.shape[1]):
             for idx, row in mos.iterrows():
                 ans_down = None
@@ -197,43 +234,63 @@ def postprocessing():
 if __name__ == '__main__':
     test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
 
-    train = pd.read_csv(args.folds_csv)
+    if args.stage == 1:
+        models = [
+            'unet_resnext_50_lovasz_stage_1_5',
+            'unet_resnext_50_lovasz_stage_1_4',
+            'unet_resnext_50_lovasz_stage_1_3',
+            'unet_resnext_50_lovasz_stage_1_2'
+        ]
 
-    MODEL_PATH = '/home/RnD/babakhin.y/salt/pred_fold_res34_pad128_newpseudo_v2'
+        model_pathes = [args.models_dir + x for x in models]
+        phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_1.npy')]
 
-    models = [
-        'unet_resnext_50_lovasz_192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual_00005_finetune_snapshots_low_thr_0001_v1',
-        'unet_resnext_50_lovasz_192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual_00005_finetune_snapshots_low_thr_0001_v2',
-        'unet_resnext_50_lovasz_192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual_00005_finetune_snapshots_low_thr_0001_v3',
-        'unet_resnext_50_lovasz_192_224_reduce_lr_smaller_decoder_bce_dice_csse_usual_00005',
-        # 'unet_resnet_152_192_224_snapshot_100_epochs_bs_16_finetune_lovash_v1'
-    ]
+        pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
+                                                          test.id.values, 0.5,
+                                                          phalanx_dicts=phalanx_dicts,
+                                                          weights=[1, 1, 1, 1],
+                                                          inner_weights=[1, 1])
 
-    models = [
-        # 'pred_fold_res34_pad128_newpseudo_v2',
-        'pred_fold_res34_resize128_newpseudo_corr',
-        # 'unet_resnext_50_lovasz_192_224_on_pseudo_000005_cyclic_1_upd',
-        # 'unet_resnext_50_lovasz_192_224_on_pseudo_000005_cyclic_2_upd',
-        # 'unet_resnext_50_lovasz_192_224_on_pseudo_000005_cyclic_3_upd',
-        # 'unet_resnext_50_lovasz_192_224_on_pseudo_000005'
+        generate_pseudolabels(pseudolabels, 'pseudolabels')
 
-    ]
+    elif args.stage == 2:
+        models = [
+            'unet_resnext_50_lovasz_stage_2_5',
+            'unet_resnext_50_lovasz_stage_2_4',
+            'unet_resnext_50_lovasz_stage_2_3',
+            'unet_resnext_50_lovasz_stage_2_2'
+        ]
 
-    model_pathes = [args.models_dir + x for x in models]
+        model_pathes = [args.models_dir + x for x in models]
+        phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_2.npy')]
 
+        pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
+                                                          test.id.values, 0.5,
+                                                          phalanx_dicts=phalanx_dicts,
+                                                          weights=[1, 1, 1, 3],
+                                                          inner_weights=[1, 1])
 
-    phalanx_dict4 = read_phalanx_test('res34_resize128_newpseudo_v2.npy')
+        generate_pseudolabels(pseudolabels, 'pseudolabels_v2')
 
-    phalanx_dicts = [phalanx_dict4]
+    elif args.stage == 3:
+        models = [
+            'unet_resnext_50_lovasz_stage_2_5',
+            'unet_resnext_50_lovasz_stage_2_4',
+            'unet_resnext_50_lovasz_stage_2_3',
+            'unet_resnext_50_lovasz_stage_2_2'
+        ]
 
-    pred, predicted_masks, predicted_probs = ensemble(model_pathes, [0, 1, 2, 3, 4],
-                                                      test.id.values, 0.5,
-                                                      classification='',
-                                                      phalanx_dicts=phalanx_dicts,
-                                                      weights=[],
-                                                      inner_weights=[0, 1])
-    MODEL_PRED = pred
+        model_pathes = [args.models_dir + x for x in models]
+        phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_3.npy')]
 
-    test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
-    test['rle_mask'] = MODEL_PRED
-    test[['id', 'rle_mask']].to_csv('13_88735.csv', index=False)
+        pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
+                                                          test.id.values, 0.5,
+                                                          phalanx_dicts=phalanx_dicts,
+                                                          weights=[1, 1, 1, 3],
+                                                          inner_weights=[1, 1])
+
+        # generate_pseudolabels(pseudolabels, 'test_predictions')
+
+        test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
+        test['rle_mask'] = pred
+        test[['id', 'rle_mask']].to_csv('../predictions/test_predictions.csv', index=False)

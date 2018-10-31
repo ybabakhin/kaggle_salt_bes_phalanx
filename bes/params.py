@@ -18,7 +18,7 @@ arg('--loss_function', default='bce_jacard')
 arg('--augmentation_name', default='valid')
 arg('--augmentation_prob', type=float, default=1.0)
 arg('--network', default='unet_resnet_50')
-arg('--alias', default='_exp_0_160_192_snapshot_50_epochs')
+arg('--alias', default='')
 arg('--callback', default='snapshot')
 
 arg('--models_dir', default='weights/')
@@ -37,5 +37,6 @@ arg('--reduce_lr_factor',  type=float, default=0.25)
 arg('--reduce_lr_patience',  type=int, default=7)
 arg('--reduce_lr_min',  type=float, default=0.000001)
 
-sys.argv = ['foo']
+arg('--stage',  type=int, default=3)
+
 args = parser.parse_args()

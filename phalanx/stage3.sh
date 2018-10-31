@@ -97,4 +97,4 @@ python precisioncv.py \
 #submit ensemble prediction
 python submit34.py \
 --model res34v5
---pred_path ../predictions/phalanx_stage_3.npy
+--pred_path predictions/phalanx_stage_3.npy
