@@ -11,7 +11,7 @@ from unet_model import Res34Unetv3, Res34Unetv4, Res34Unetv5
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from fast_progress import master_bar, progress_bar
+from fastprogress import master_bar, progress_bar
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--model', default='res34v5', type=str, help='Model version')

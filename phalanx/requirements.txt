@@ -4,4 +4,4 @@ cv2==3.4.3
 
 pytorch==0.4.0
 torchvision==0.2.1
-fast_progress==0.1.2
+fastprogress==0.1.15

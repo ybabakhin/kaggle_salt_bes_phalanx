@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from fast_progress import master_bar, progress_bar
+from fastprogress import master_bar, progress_bar
 
 from lovasz_losses import lovasz_hinge
 from utils import do_kaggle_metric
