@@ -8,7 +8,7 @@ python3 train_pseudo.py \
 --epoch 150 \
 --snapshot 3 \
 --cuda True \
--save_weight weights/stage3/ \
+--save_weight weights/stage3/ \
 --max_lr 0.01 \
 --min_lr 0.001 \
 --momentum 0.9 \
