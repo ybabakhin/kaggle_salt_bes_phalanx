@@ -1,5 +1,5 @@
 #train stage2 model with train data and pseudolabels
-python train_cv.py \
+python3 train_cv.py \
 --model res34v3 \
 --fine_size 202 \
 --pad_left 27 \
@@ -17,7 +17,7 @@ python train_cv.py \
 
 
 #prediction with stage2 model
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v3 \
 --fine_size 202 \
 --pad_left 27 \
@@ -30,7 +30,7 @@ python precisioncv.py \
 --end_snap 3 \
 
 
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v3 \
 --fine_size 202 \
 --pad_left 27 \
@@ -43,7 +43,7 @@ python precisioncv.py \
 --end_snap 3 \
 
 
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v3 \
 --fine_size 202 \
 --pad_left 27 \
@@ -56,7 +56,7 @@ python precisioncv.py \
 --end_snap 3 \
 
 
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v3 \
 --fine_size 202 \
 --pad_left 27 \
@@ -69,7 +69,7 @@ python precisioncv.py \
 --end_snap 3 \
 
 
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v3 \
 --fine_size 202 \
 --pad_left 27 \
@@ -83,6 +83,6 @@ python precisioncv.py \
 
 
 #submit ensemble prediction
-python submit34.py \
+python3 submit34.py \
 --model res34v3
 --pred_path predictions/phalanx_stage_2.npy
