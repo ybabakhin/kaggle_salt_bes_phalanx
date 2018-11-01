@@ -29,7 +29,7 @@ arg('--pseudolabels_dir', default='')
 arg('--masks_dir', default='../data/train/masks/')
 arg('--test_folder', default='../data/test/images/')
 arg('--folds_csv', default='../data/train_proc_v2_gr.csv')
-arg('--pseudolabels_csv', default='../data/pseudolabels_v2.csv')
+arg('--pseudolabels_csv', default='../data/pseudolabels.csv')
 
 arg('--initial_size', type=int, default=101)
 arg('--num_workers', type=int, default=12)
