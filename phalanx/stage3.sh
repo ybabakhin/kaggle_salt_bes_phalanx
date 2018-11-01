@@ -1,5 +1,5 @@
 #pretrain stage3 model with pseudo labels
-python train_pseudo.py \
+python3 train_pseudo.py \
 --model res34v5 \
 --fine_size 101 \
 --pad_left 13 \
@@ -16,7 +16,7 @@ python train_pseudo.py \
 --pseudo_path ../data/pseudolabels_v2/
 
 #train stage3 model with train data
-python train_cv.py \
+python3 train_cv.py \
 --model res34v5 \
 --fine_size 101 \
 --pad_left 13 \
@@ -32,7 +32,7 @@ python train_cv.py \
 --weight_decay 1e-4 \
 
 #prediction with stage3 model
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v5 \
 --fine_size 101 \
 --pad_left 13 \
@@ -44,7 +44,7 @@ python precisioncv.py \
 --start_snap 0 \
 --end_snap 3 \
 
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v5 \
 --fine_size 101 \
 --pad_left 13 \
@@ -56,7 +56,7 @@ python precisioncv.py \
 --start_snap 0 \
 --end_snap 3 \
 
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v5 \
 --fine_size 101 \
 --pad_left 13 \
@@ -69,7 +69,7 @@ python precisioncv.py \
 --end_snap 3 \
 
 
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v5 \
 --fine_size 101 \
 --pad_left 13 \
@@ -82,7 +82,7 @@ python precisioncv.py \
 --end_snap 2 \
 
 
-python precisioncv.py \
+python3 precisioncv.py \
 --model res34v5 \
 --fine_size 101 \
 --pad_left 13 \
@@ -95,6 +95,6 @@ python precisioncv.py \
 --end_snap 3 \
 
 #submit ensemble prediction
-python submit34.py \
+python3 submit34.py \
 --model res34v5
 --pred_path predictions/phalanx_stage_3.npy
