@@ -159,7 +159,7 @@ def semi_trainImageFetch(pseudo_path, list_id=None):
     return image_train, mask_train
 
 
-def testImageFetch():
+def testImageFetch(test_id):
     image_test = np.zeros((18000, 101, 101), dtype=np.float32)
 
     for n, image_id in tqdm(enumerate(test_id), total=len(test_id)):

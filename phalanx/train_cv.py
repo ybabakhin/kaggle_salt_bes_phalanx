@@ -11,7 +11,7 @@ from unet_model import Res34Unetv3, Res34Unetv4, Res34Unetv5
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from fastprogress import master_bar, progress_bar
+# from fastprogress import master_bar, progress_bar
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--model', default='res34v5', type=str, help='Model version')
@@ -23,8 +23,8 @@ parser.add_argument('--epoch', default=300, type=int, help='Number of training e
 parser.add_argument('--snapshot', default=5, type=int, help='Number of snapshots per fold')
 parser.add_argument('--cuda', default=True, type=bool, help='Use cuda to train model')
 parser.add_argument('--save_weight', default='weights/stage3/', type=str, help='weight save space')
-parser.add_argument('--max_lr', '--learning-rate', default=0.01, type=float, help='max learning rate')
-parser.add_argument('--min_lr', '--learning-rate', default=0.001, type=float, help='min learning rate')
+parser.add_argument('--max_lr', default=0.01, type=float, help='max learning rate')
+parser.add_argument('--min_lr', default=0.001, type=float, help='min learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum for SGD')
 parser.add_argument('--weight_decay', default=1e-4, type=float, help='Weight decay for SGD')
 parser.add_argument('--is_pseudo', default=False, type=bool, help='Use pseudolabels or not')
@@ -80,7 +80,8 @@ def train(train_loader, model):
     data_size = train_data.__len__()
 
     model.train()
-    for inputs, masks, labels in progress_bar(train_loader, parent=mb):
+    #for inputs, masks, labels in progress_bar(train_loader, parent=mb):
+    for inputs, masks, labels in train_loader:
         inputs, masks, labels = inputs.to(device), masks.to(device), labels.to(device)
         optimizer.zero_grad()
 
@@ -99,7 +100,7 @@ def train(train_loader, model):
             optimizer.step()
 
         running_loss += loss.item() * inputs.size(0)
-        mb.child.comment = 'loss: {}'.format(loss.item())
+        # mb.child.comment = 'loss: {}'.format(loss.item())
     epoch_loss = running_loss / data_size
     return epoch_loss
 
@@ -148,8 +149,9 @@ if __name__ == '__main__':
         num_snapshot = 0
         best_acc = 0
 
-        mb = master_bar(range(args.epoch))
-        for epoch in mb:
+        #mb = master_bar(range(args.epoch))
+        #for epoch in mb:
+        for epoch in range(args.epoch):
             train_loss = train(train_loader, salt)
             val_loss, accuracy = test(val_loader, salt)
             lr_scheduler.step()
@@ -166,5 +168,5 @@ if __name__ == '__main__':
                 num_snapshot += 1
                 best_acc = 0
 
-            mb.write('epoch: {} train_loss: {:.3f} val_loss: {:.3f} val_accuracy: {:.3f}'.format(epoch + 1, train_loss,
-                                                                                                 val_loss, accuracy))
+            #mb.write('epoch: {} train_loss: {:.3f} val_loss: {:.3f} val_accuracy: {:.3f}'.format(epoch + 1, train_loss,
+            #                                                                                     val_loss, accuracy))

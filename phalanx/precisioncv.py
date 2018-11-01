@@ -97,4 +97,4 @@ if __name__ == '__main__':
 
     pred /= (args.end_snap - args.start_snap + 1)
     # Save prediction
-    np.save(args.save_pred + 'pred' + args.fold, pred)
+np.save(args.save_pred + 'pred' + args.fold, pred)

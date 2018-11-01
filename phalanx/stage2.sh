@@ -37,7 +37,7 @@ python3 precisioncv.py \
 --pad_right 27 \
 --batch_size 18 \
 --cuda True \
---fold 1
+--fold 1 \
 --save_weight weights/stage2/ \
 --start_snap 0 \
 --end_snap 3 \
@@ -50,7 +50,7 @@ python3 precisioncv.py \
 --pad_right 27 \
 --batch_size 18 \
 --cuda True \
---fold 2
+--fold 2 \
 --save_weight weights/stage2/ \
 --start_snap 0 \
 --end_snap 3 \
@@ -63,7 +63,7 @@ python3 precisioncv.py \
 --pad_right 27 \
 --batch_size 18 \
 --cuda True \
---fold 3
+--fold 3 \
 --save_weight weights/stage2/ \
 --start_snap 0 \
 --end_snap 3 \
@@ -76,7 +76,7 @@ python3 precisioncv.py \
 --pad_right 27 \
 --batch_size 18 \
 --cuda True \
---fold 4
+--fold 4 \
 --save_weight weights/stage2/ \
 --start_snap 0 \
 --end_snap 3 \
@@ -84,5 +84,5 @@ python3 precisioncv.py \
 
 #submit ensemble prediction
 python3 submit34.py \
---model res34v3
+--model res34v3 \
 --pred_path predictions/phalanx_stage_2.npy
