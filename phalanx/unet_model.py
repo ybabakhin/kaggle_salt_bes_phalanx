@@ -150,11 +150,11 @@ class Res34Unetv4(nn.Module):
 
         self.encode2 = nn.Sequential(self.resnet.layer1,
                                      SCse(64))
-        self.encode2 = nn.Sequential(self.resnet.layer2,
+        self.encode3 = nn.Sequential(self.resnet.layer2,
                                      SCse(128))
-        self.encode2 = nn.Sequential(self.resnet.layer3,
+        self.encode4 = nn.Sequential(self.resnet.layer3,
                                      SCse(256))
-        self.encode2 = nn.Sequential(self.resnet.layer4,
+        self.encode5 = nn.Sequential(self.resnet.layer4,
                                      SCse(512))
 
         self.center = nn.Sequential(FPAv2(512, 256),
