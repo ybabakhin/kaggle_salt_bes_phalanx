@@ -119,7 +119,8 @@ if __name__ == '__main__':
     salt = salt.to(device)
 
     for idx in range(5):
-        salt.load_state_dict(param)  # initialize with pretained weight
+        if args.model == 'res34v5':
+            salt.load_state_dict(param)  # initialize with pretained weight
 
         # Setup optimizer
         optimizer = torch.optim.SGD(salt.parameters(), lr=args.max_lr, momentum=args.momentum,
