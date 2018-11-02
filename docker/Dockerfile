@@ -39,7 +39,7 @@ RUN cd opencv && mkdir build && cd build && cmake -D BUILD_EXAMPLES=OFF \
 # Additinal Libraries
 RUN pip install h5py==2.8.0
 RUN pip install tqdm==4.24.0
-RUN pip install albumentations==0.0.4
+RUN pip install albumentations==0.1.2
 RUN pip install keras==2.2.0
 
 # RUN chmod +x entrypoint.sh
