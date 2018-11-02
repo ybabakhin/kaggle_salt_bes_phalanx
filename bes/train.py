@@ -27,7 +27,6 @@ def main():
             if os.path.isdir(MODEL_PATH):
                 raise ValueError('Such Model already exists')
             os.system("mkdir {}".format(MODEL_PATH))
-            os.system("cp train_all.sh {}".format(MODEL_PATH))
 
         # Train/Validation sampling
         df_train = train[train.fold != fold].copy().reset_index(drop=True)
@@ -47,7 +46,6 @@ def main():
 
         # Initialize model
         weights_path = os.path.join(MODEL_PATH, 'fold_{fold}.hdf5'.format(fold=fold))
-        print(weights_path.split('/')[-2:])
 
         # Get the model
         model, preprocess = get_model(args.network,
