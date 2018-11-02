@@ -29,7 +29,7 @@ arg('--pseudolabels_dir', default='')
 arg('--masks_dir', default='../data/train/masks/')
 arg('--test_folder', default='../data/test/images/')
 arg('--folds_csv', default='../data/train_proc_v2_gr.csv')
-arg('--pseudolabels_csv', default='../data/pseudolabels.csv')
+arg('--pseudolabels_csv', default='../data/pseudolabels_confident.csv')
 
 arg('--initial_size', type=int, default=101)
 arg('--num_workers', type=int, default=12)
@@ -39,5 +39,6 @@ arg('--reduce_lr_patience',  type=int, default=7)
 arg('--reduce_lr_min',  type=float, default=0.000001)
 
 arg('--stage',  type=int, default=3)
+arg('--postprocessing',  type=int, default=0)
 
 args = parser.parse_args()

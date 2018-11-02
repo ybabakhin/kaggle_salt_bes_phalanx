@@ -144,6 +144,3 @@ python3 predict_test.py \
 --alias _lovasz_stage_1_5 \
 --prediction_weights fold_{}.hdf5 \
 --prediction_folder fold_{}
-
-python3 ensemble.py \
---stage 1

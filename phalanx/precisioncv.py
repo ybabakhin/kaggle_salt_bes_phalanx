@@ -20,7 +20,7 @@ parser.add_argument('--batch_size', default=18, type=int, help='Batch size for t
 parser.add_argument('--epoch', default=300, type=int, help='Number of training epochs')
 parser.add_argument('--snapshot', default=5, type=int, help='Number of snapshots per fold')
 parser.add_argument('--cuda', default=True, type=bool, help='Use cuda to train model')
-parser.add_argument('--save_weight', default='weights/stage3/', type=str, help='weight save space')
+parser.add_argument('--save_weight', default='weights/', type=str, help='weight save space')
 parser.add_argument('--save_pred', default='fold_predictions/', type=str, help='prediction save space')
 parser.add_argument('--max_lr', default=0.01, type=float, help='max learning rate')
 parser.add_argument('--min_lr', default=0.001, type=float, help='min learning rate')

@@ -1,7 +1,6 @@
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 from callbacks.snapshot import SnapshotCallbackBuilder
 from params import args
-import os
 
 
 def get_callback(callback, **kwargs):
@@ -21,10 +20,5 @@ def get_callback(callback, **kwargs):
     mc_callback_best = ModelCheckpoint(kwargs['weights_path'], monitor='val_lb_metric', verbose=0, save_best_only=True,
                                        save_weights_only=True, mode='max', period=1)
     callbacks.append(mc_callback_best)
-
-    tensorboard_dir = os.path.join(args.models_dir, 'logs/', '_'.join(kwargs['weights_path'].split('/')[-2:]))
-    tensorboard_callback = TensorBoard(log_dir=tensorboard_dir)
-
-    callbacks.append(tensorboard_callback)
 
     return callbacks

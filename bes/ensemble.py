@@ -112,7 +112,7 @@ def ensemble(model_dirs, folds, ids, thr, phalanx_dicts=None, weights=None, inne
                 i += 1
             final_pred = np.sum(np.array(final_pred), axis=0) / sum(inner_weights)
 
-        confidence = (np.sum(final_pred < 0.2) + np.sum(final_pred > 0.8))/(101**2)
+        confidence = (np.sum(final_pred < 0.2) + np.sum(final_pred > 0.8)) / (101 ** 2)
         mask = final_pred > thr
         pseudolabels[img_id] = (confidence, mask * 255)
 
@@ -144,30 +144,29 @@ def generate_pseudolabels(pseudolabels, pseudolabels_path='pseudolabels'):
 
     for idx, row in df_test.iterrows():
         cv2.imwrite(
-            os.path.join('../data/', pseudolabels_path, str(idx) + '.png'),
+            os.path.join(args.data_root, pseudolabels_path, str(idx) + '.png'),
             np.array(row['mask'], np.uint8))
 
     df_test[['unique_pixels', 'mask_pixels', 'confidence']].sample(frac=1, random_state=123).to_csv(
-        os.path.join('../data/', pseudolabels_path + '.csv'))
+        os.path.join(args.data_root, pseudolabels_path + '.csv'))
 
     pseudo = df_test[(df_test.confidence >= 0.9) & (df_test.unique_pixels > 1)].sample(frac=1, random_state=123)
     pseudo['coverage_class'] = -1
     pseudo['fold'] = -1
     pseudo[['fold', 'unique_pixels', 'coverage_class']].to_csv(
-        os.path.join('../data/', pseudolabels_path + '_confident.csv'))
+        os.path.join(args.data_root, pseudolabels_path + '_confident.csv'))
 
 
-def postprocessing():
-    # Vertical masks from train
-    df_train = pd.read_csv('data/train.csv')
+def postprocessing(test):
+    df_train = pd.read_csv(os.path.join(args.data_root, 'train.csv'))
 
     masks = []
     dist = []
 
     for id in df_train.id.values:
-        mask = cv2.imread(os.path.join('data/train/masks/', '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
+        mask = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
         masks.append(np.array(mask) / 255.)
-        img = cv2.imread(os.path.join('data/train/images/', '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
         dist.append(np.unique(img).shape[0])
 
     df_train['unique_pixels'] = dist
@@ -191,10 +190,9 @@ def postprocessing():
 
     df_train["is_vertical"] = df_train.masks.map(get_mask_type)
 
-    # DO NOT BREAK IN A SINGLE COLUMN. MAYBE AVERAGE OF KNOWN PREDICTIONS?
-    leaks_dict = {}
-    for mos_csv in os.listdir('../data/mos_numpy/'):
-        mos = pd.read_csv(os.path.join('../data/mos_numpy/', mos_csv), header=None)
+    verts_dict = {}
+    for mos_csv in os.listdir(os.path.join(args.masks_dir, '/mos_numpy/')):
+        mos = pd.read_csv(os.path.join(args.masks_dir, '/mos_numpy/', mos_csv), header=None)
         for col in range(mos.shape[1]):
             for idx, row in mos.iterrows():
                 ans_down = None
@@ -211,24 +209,20 @@ def postprocessing():
                     break
             if ans_down is not None:
                 for id in mos.loc[idx + 1:, col]:
-                    leaks_dict[id] = ans_down
+                    verts_dict[id] = ans_down
             if ans_up is not None and idx >= 3:
                 for id in mos.loc[idx - 1:idx, col]:
-                    leaks_dict[id] = ans_up
+                    verts_dict[id] = ans_up
 
-    changed = 0
-    s_v = pd.DataFrame({'id': list(leaks_dict.keys()), 'hand_rle': list(leaks_dict.values())})
-    print(s_v.shape)
-    pred = []
+    final_pred = []
     for idx, row in test.iterrows():
-        if row['id'] in s_v.id.values:
-            pred.append(s_v[s_v.id == row['id']]['hand_rle'].values[0])
-            changed += 1
+        if row['id'] in verts_dict.keys():
+            final_pred.append(verts_dict[row['id']])
         else:
-            pred.append(row['rle_mask'])
-    print('Changed: ', changed)
-    test['rle_mask'] = pred
-    test[['id', 'rle_mask']].to_csv('6+12_89555_vertv1.csv', index=False)
+            final_pred.append(row['rle_mask'])
+    test['rle_mask'] = final_pred
+
+    return test
 
 
 if __name__ == '__main__':
@@ -246,10 +240,10 @@ if __name__ == '__main__':
         phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_1.npy')]
 
         pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
-                                                          test.id.values, 0.5,
-                                                          phalanx_dicts=phalanx_dicts,
-                                                          weights=[1, 1, 1, 1],
-                                                          inner_weights=[1, 1])
+                                      test.id.values, 0.5,
+                                      phalanx_dicts=phalanx_dicts,
+                                      weights=[1, 1, 1, 1],
+                                      inner_weights=[1, 1])
 
         generate_pseudolabels(pseudolabels, 'pseudolabels')
 
@@ -265,10 +259,10 @@ if __name__ == '__main__':
         phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_2.npy')]
 
         pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
-                                                          test.id.values, 0.5,
-                                                          phalanx_dicts=phalanx_dicts,
-                                                          weights=[1, 1, 1, 3],
-                                                          inner_weights=[1, 1])
+                                      test.id.values, 0.5,
+                                      phalanx_dicts=phalanx_dicts,
+                                      weights=[1, 1, 1, 3],
+                                      inner_weights=[1, 1])
 
         generate_pseudolabels(pseudolabels, 'pseudolabels_v2')
 
@@ -284,13 +278,18 @@ if __name__ == '__main__':
         phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_3.npy')]
 
         pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
-                                                          test.id.values, 0.5,
-                                                          phalanx_dicts=phalanx_dicts,
-                                                          weights=[1, 1, 1, 3],
-                                                          inner_weights=[1, 1])
+                                      test.id.values, 0.5,
+                                      phalanx_dicts=phalanx_dicts,
+                                      weights=[1, 1, 1, 3],
+                                      inner_weights=[1, 1])
 
+        # Whether to generate test predictions?
         # generate_pseudolabels(pseudolabels, 'test_predictions')
 
         test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
         test['rle_mask'] = pred
+
+        if args.postprocessing == 1:
+            test = postprocessing(test)
+
         test[['id', 'rle_mask']].to_csv('../predictions/test_predictions.csv', index=False)

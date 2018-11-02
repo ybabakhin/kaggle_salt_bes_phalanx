@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-train_id = pd.read_csv('../input/train.csv')['id'].values
-depth_id = pd.read_csv('../input/depths.csv')['id'].values
+train_id = pd.read_csv('../data/train.csv')['id'].values
+depth_id = pd.read_csv('../data/depths.csv')['id'].values
 test_id = np.setdiff1d(depth_id, train_id)
 
 if __name__ == '__main__':
