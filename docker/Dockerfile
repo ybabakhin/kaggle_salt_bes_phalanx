@@ -7,7 +7,7 @@ RUN pip --no-cache-dir install --upgrade \
     && rm -rf /root/.cache
 
 RUN apt-get -y update
-
+RUN pip3 install --upgrade pip
 ## Install OpenCV
 #RUN apt-get -y install git python3-setuptools
 #RUN apt-get -y install cmake build-essential libjpeg-dev libpng-dev libgtk2.0-dev
@@ -35,7 +35,7 @@ RUN apt-get -y update
 #-D CMAKE_INSTALL_PREFIX=/usr/local/ .. && make -j4 && make install && cd ../../ && rm -rf opencv
 
 # Additinal Libraries
-RUN pip install opencv-python==3.4.3
+RUN pip install opencv-python==3.4.3.18
 RUN pip install h5py==2.8.0
 RUN pip install tqdm==4.24.0
 RUN pip install albumentations==0.1.2
