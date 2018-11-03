@@ -35,11 +35,11 @@ RUN apt-get -y update
 #-D CMAKE_INSTALL_PREFIX=/usr/local/ .. && make -j4 && make install && cd ../../ && rm -rf opencv
 
 # Additinal Libraries
+RUN pip install opencv-python==3.4.3
 RUN pip install h5py==2.8.0
 RUN pip install tqdm==4.24.0
 RUN pip install albumentations==0.1.2
 RUN pip install keras==2.2.0
-RUN pip install opencv-python==3.4.3
 # RUN pip install fastprogress==0.1.15
 
 # RUN chmod +x entrypoint.sh
