@@ -5,7 +5,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from fastprogress import master_bar, progress_bar
+
+# fastprogress available only for Python3.6+ and Tensorflow Docker image for Python < 3.6
+# from fastprogress import master_bar, progress_bar
 
 from lovasz_losses import lovasz_hinge
 from utils import do_kaggle_metric
@@ -71,7 +73,8 @@ def train(train_loader, model):
     data_size = train_data.__len__()
 
     model.train()
-    for inputs, masks, labels in progress_bar(train_loader, parent=mb):
+    # for inputs, masks, labels in progress_bar(train_loader, parent=mb):
+    for inputs, masks, labels in train_loader:
         inputs, masks, labels = inputs.to(device), masks.to(device), labels.to(device)
         optimizer.zero_grad()
 
@@ -82,7 +85,7 @@ def train(train_loader, model):
             optimizer.step()
 
         running_loss += loss.item() * inputs.size(0)
-        mb.child.comment = 'loss: {}'.format(loss.item())
+        # mb.child.comment = 'loss: {}'.format(loss.item())
     epoch_loss = running_loss / data_size
     return epoch_loss
 
@@ -118,8 +121,9 @@ if __name__ == '__main__':
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_step, args.min_lr)
 
     # Start train
-    mb = master_bar(range(args.epoch))
-    for epoch in mb:
+    # mb = master_bar(range(args.epoch))
+    # for epoch in mb:
+    for epoch in range(args.epoch):
         train_loss = train(train_loader, salt)
         val_loss, precision = test(val_loader, salt)
         lr_scheduler.step()
@@ -134,8 +138,10 @@ if __name__ == '__main__':
             best_acc = precision
 
         # print train/val loss and val accuracy
-        mb.write(
-            'epoch: {} train_loss: {:.3f} test_loss: {:.3f} accuracy: {:.3f}'.format(epoch + 1, train_loss, val_loss,
+        # mb.write(
+        #     'epoch: {} train_loss: {:.3f} test_loss: {:.3f} accuracy: {:.3f}'.format(epoch + 1, train_loss, val_loss,
+        #                                                                              precision))
+        print('epoch: {} train_loss: {:.3f} test_loss: {:.3f} accuracy: {:.3f}'.format(epoch + 1, train_loss, val_loss,
                                                                                      precision))
 
     # save best accuracy weight

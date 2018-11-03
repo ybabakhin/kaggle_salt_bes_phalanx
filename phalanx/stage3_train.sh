@@ -1,4 +1,4 @@
-#pretrain stage3 model with pseudo labels
+# pretrain stage3 model with pseudolabels
 python3 train_pseudo.py \
 --model res34v5 \
 --fine_size 101 \
@@ -15,7 +15,7 @@ python3 train_pseudo.py \
 --weight_decay 1e-4 \
 --pseudo_path ../data/pseudolabels_v2/
 
-#train stage3 model with train data
+# train stage3 model with train data
 python3 train_cv.py \
 --model res34v5 \
 --fine_size 101 \

@@ -1,4 +1,4 @@
-#train stage1 model with train data
+# train stage1 model with train data
 python3 train_cv.py \
 --model res34v4 \
 --fine_size 202 \
@@ -15,7 +15,7 @@ python3 train_cv.py \
 --weight_decay 1e-4 \
 
 
-#prediction with stage1 model
+# fold predictions
 python3 precisioncv.py \
 --model res34v4 \
 --fine_size 202 \
@@ -81,7 +81,7 @@ python3 precisioncv.py \
 --end_snap 5 \
 
 
-#submit ensemble prediction
+# stage1 model prediction
 python3 submit34.py \
 --model res34v4 \
 --pred_path predictions/phalanx_stage_1.npy

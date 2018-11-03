@@ -1,4 +1,4 @@
-#prediction with stage3 model
+# fold predictions
 python3 precisioncv.py \
 --model res34v5 \
 --fine_size 101 \
@@ -61,7 +61,7 @@ python3 precisioncv.py \
 --start_snap 0 \
 --end_snap 2 \
 
-#submit ensemble prediction
+# stage3 model prediction
 python3 submit34.py \
 --model res34v5 \
 --pred_path predictions/phalanx_stage_3.npy

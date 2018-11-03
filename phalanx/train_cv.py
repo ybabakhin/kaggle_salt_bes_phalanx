@@ -11,6 +11,8 @@ from unet_model import Res34Unetv3, Res34Unetv4, Res34Unetv5
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+
+# fastprogress available only for Python3.6+ and Tensorflow Docker image for Python < 3.6
 # from fastprogress import master_bar, progress_bar
 
 parser = argparse.ArgumentParser(description='')
@@ -58,7 +60,7 @@ def test(test_loader, model):
                 outputs, _, _ = model(inputs)
             else:
                 outputs = model(inputs)
-            
+
             outputs = outputs[:, :, args.pad_left:args.pad_left + args.fine_size,
                       args.pad_left:args.pad_left + args.fine_size].contiguous()
             loss = lovasz_hinge(outputs.squeeze(1), masks.squeeze(1))
@@ -80,7 +82,7 @@ def train(train_loader, model):
     data_size = train_data.__len__()
 
     model.train()
-    #for inputs, masks, labels in progress_bar(train_loader, parent=mb):
+    # for inputs, masks, labels in progress_bar(train_loader, parent=mb):
     for inputs, masks, labels in train_loader:
         inputs, masks, labels = inputs.to(device), masks.to(device), labels.to(device)
         optimizer.zero_grad()
@@ -133,9 +135,9 @@ if __name__ == '__main__':
         X_train, y_train = trainImageFetch(train_id)
         X_val, y_val = trainImageFetch(val_id)
 
-        #Load pseudo labels for stage2
+        # Load pseudo labels for stage2
         if args.is_pseudo:
-            pseudo_id = np.load('../data/stage2_fold'+str(idx)+'.npy')
+            pseudo_id = np.load('../data/stage2_fold' + str(idx) + '.npy')
             X_pseudo, y_pseudo = semi_trainImageFetch('../data/pseudolabels/', pseudo_id)
             X_train = np.concatenate((X_train, X_pseudo))
             y_train = np.concatenate((y_train, y_pseudo))
@@ -150,8 +152,8 @@ if __name__ == '__main__':
         num_snapshot = 0
         best_acc = 0
 
-        #mb = master_bar(range(args.epoch))
-        #for epoch in mb:
+        # mb = master_bar(range(args.epoch))
+        # for epoch in mb:
         for epoch in range(args.epoch):
             train_loss = train(train_loader, salt)
             val_loss, accuracy = test(val_loader, salt)
@@ -169,5 +171,7 @@ if __name__ == '__main__':
                 num_snapshot += 1
                 best_acc = 0
 
-            #mb.write('epoch: {} train_loss: {:.3f} val_loss: {:.3f} val_accuracy: {:.3f}'.format(epoch + 1, train_loss,
+            # mb.write('epoch: {} train_loss: {:.3f} val_loss: {:.3f} val_accuracy: {:.3f}'.format(epoch + 1, train_loss,
             #                                                                                     val_loss, accuracy))
+            print('epoch: {} train_loss: {:.3f} val_loss: {:.3f} val_accuracy: {:.3f}'.format(epoch + 1, train_loss,
+                                                                                              val_loss, accuracy))

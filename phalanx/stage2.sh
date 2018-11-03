@@ -1,4 +1,4 @@
-#train stage2 model with train data and pseudolabels
+# train stage2 model with train data and pseudolabels
 python3 train_cv.py \
 --model res34v3 \
 --fine_size 202 \
@@ -16,7 +16,7 @@ python3 train_cv.py \
 --is_pseudo True \
 
 
-#prediction with stage2 model
+# fold predictions
 python3 precisioncv.py \
 --model res34v3 \
 --fine_size 202 \
@@ -82,7 +82,7 @@ python3 precisioncv.py \
 --end_snap 3 \
 
 
-#submit ensemble prediction
+# stage2 model prediction
 python3 submit34.py \
 --model res34v3 \
 --pred_path predictions/phalanx_stage_2.npy
