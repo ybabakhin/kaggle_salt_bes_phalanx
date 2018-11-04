@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # fold predictions
 python3 precisioncv.py \
 --model res34v5 \

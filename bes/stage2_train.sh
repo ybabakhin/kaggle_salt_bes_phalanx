@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Pretrain with pseudolabels
 python3 train.py \
 --epochs 40 \

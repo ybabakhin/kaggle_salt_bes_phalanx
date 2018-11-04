@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # train stage1 model with train data
 python3 train_cv.py \
 --model res34v4 \

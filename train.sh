@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 # Train Stage 1 Models
 pushd phalanx

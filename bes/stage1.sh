@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Pretrain with BCE + DICE
 python3 train.py \
 --epochs 125 \

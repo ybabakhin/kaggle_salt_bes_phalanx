@@ -43,7 +43,11 @@ RUN pip install albumentations==0.1.2
 RUN pip install keras==2.2.0
 # RUN pip install fastprogress==0.1.15
 
-# RUN chmod +x entrypoint.sh
+
+ENV PYTHONPATH $PYTHONPATH:/workdir
+ENV TORCH_HOME=/workdir/data/.torch
+
+WORKDIR /workdir
 
 # User for writing
 

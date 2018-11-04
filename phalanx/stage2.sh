@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # train stage2 model with train data and pseudolabels
 python3 train_cv.py \
 --model res34v3 \

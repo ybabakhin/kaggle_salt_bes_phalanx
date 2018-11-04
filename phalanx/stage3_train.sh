@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # pretrain stage3 model with pseudolabels
 python3 train_pseudo.py \
 --model res34v5 \

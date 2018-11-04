@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 pushd phalanx
 ./stage3_predict.sh
 popd

@@ -1,4 +1,6 @@
-# Predict on test data #####################################
+#!/usr/bin/env bash
+
+# Predict on test data
 python3 predict_test.py \
 --epochs 125 \
 --pretrain_weights weights/unet_resnext_50_stage_2_1/fold_0.hdf5 \
