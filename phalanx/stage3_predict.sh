@@ -4,7 +4,7 @@ python3 precisioncv.py \
 --fine_size 101 \
 --pad_left 13 \
 --pad_right 14 \
---batch_size 32 \
+--batch_size 36 \
 --cuda True \
 --fold 0 \
 --save_weight weights/ \
@@ -16,7 +16,7 @@ python3 precisioncv.py \
 --fine_size 101 \
 --pad_left 13 \
 --pad_right 14 \
---batch_size 32 \
+--batch_size 36 \
 --cuda True \
 --fold 1 \
 --save_weight weights/ \
@@ -28,7 +28,7 @@ python3 precisioncv.py \
 --fine_size 101 \
 --pad_left 13 \
 --pad_right 14 \
---batch_size 32 \
+--batch_size 36 \
 --cuda True \
 --fold 2 \
 --save_weight weights/ \
@@ -41,7 +41,7 @@ python3 precisioncv.py \
 --fine_size 101 \
 --pad_left 13 \
 --pad_right 14 \
---batch_size 32 \
+--batch_size 36 \
 --cuda True \
 --fold 3 \
 --save_weight weights/ \
@@ -54,7 +54,7 @@ python3 precisioncv.py \
 --fine_size 101 \
 --pad_left 13 \
 --pad_right 14 \
---batch_size 32 \
+--batch_size 36 \
 --cuda True \
 --fold 4 \
 --save_weight weights/ \
