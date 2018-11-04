@@ -1,7 +1,7 @@
 #!/bin/bash
 cd $(dirname $0)
 
-NAME="argus-tgs-salt"
+NAME="bes-phalanx-tgs-salt"
 IMAGENAME="${NAME}"
 CONTNAME="--name=${NAME}"
 NET="--net=host"
