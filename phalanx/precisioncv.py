@@ -43,9 +43,7 @@ if __name__ == '__main__':
     # Load test data
     image_test = testImageFetch(test_id)
 
-    pred_null = []
-    pred_flip = []
-    pred = np.zeros((18000, args.fine_size, args.fine_size), dtype=np.float32)
+    overall_pred = np.zeros((18000, args.fine_size, args.fine_size), dtype=np.float32)
 
     # Get model
     if args.model == 'res34v3':
@@ -58,6 +56,8 @@ if __name__ == '__main__':
 
     # Start prediction
     for step in range(args.start_snap, args.end_snap + 1):
+        pred_null = []
+        pred_flip = []
         # Load weight
         param = torch.load(args.save_weight + args.weight_name + args.fold + str(step) + '.pth')
         salt.load_state_dict(param)
@@ -93,8 +93,8 @@ if __name__ == '__main__':
 
         pred_null = np.array(pred_null).reshape(-1, args.fine_size, args.fine_size)
         pred_flip = np.array(pred_flip).reshape(-1, args.fine_size, args.fine_size)
-        pred += (pred_null + pred_flip) / 2
+        overall_pred += (pred_null + pred_flip) / 2
 
-    pred /= (args.end_snap - args.start_snap + 1)
+    overall_pred /= (args.end_snap - args.start_snap + 1)
     # Save prediction
-    np.save(args.save_pred + 'pred' + args.fold, pred)
+    np.save(args.save_pred + 'pred' + args.fold, overall_pred)

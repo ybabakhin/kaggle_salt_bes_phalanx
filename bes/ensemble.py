@@ -191,8 +191,8 @@ def postprocessing(test):
     df_train["is_vertical"] = df_train.masks.map(get_mask_type)
 
     verts_dict = {}
-    for mos_csv in os.listdir(os.path.join(args.masks_dir, '/mos_numpy/')):
-        mos = pd.read_csv(os.path.join(args.masks_dir, '/mos_numpy/', mos_csv), header=None)
+    for mos_csv in os.listdir(os.path.join(args.data_root, 'mos_numpy/')):
+        mos = pd.read_csv(os.path.join(args.data_root, 'mos_numpy/', mos_csv), header=None)
         for col in range(mos.shape[1]):
             for idx, row in mos.iterrows():
                 ans_down = None

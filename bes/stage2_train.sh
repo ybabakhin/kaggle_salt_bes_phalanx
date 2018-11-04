@@ -11,7 +11,23 @@ python3 train.py \
 --callback snapshot \
 --pseudolabels_dir ../data/pseudolabels/ \
 --network unet_resnext_50 \
+--alias _stage_2_0
+
+python3 train.py \
+--epochs 40 \
+--n_snapshots 1 \
+--pretrain_weights /home/RnD/babakhin.y/salt/unet_resnext_50_stage_2_0/fold_0.hdf5 \
+--fold 0 \
+--learning_rate 0.00005 \
+--input_size 224 \
+--resize_size 192 \
+--batch_size 28 \
+--loss_function lovasz \
+--callback snapshot \
+--pseudolabels_dir ../data/pseudolabels/ \
+--network unet_resnext_50_lovasz \
 --alias _stage_2_1
+
 
 # Finetune on train
 python3 train.py \
