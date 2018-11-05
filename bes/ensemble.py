@@ -164,9 +164,9 @@ def postprocessing(test):
     dist = []
 
     for id in df_train.id.values:
-        mask = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
+        mask = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
         masks.append(np.array(mask) / 255.)
-        img = cv2.imread(os.path.join(args.masks_dir, '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(id)), cv2.IMREAD_GRAYSCALE)
         dist.append(np.unique(img).shape[0])
 
     df_train['unique_pixels'] = dist
