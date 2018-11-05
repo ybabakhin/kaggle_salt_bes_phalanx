@@ -1,3 +1,5 @@
+# Source: https://www.kaggle.com/vicensgaitan/salt-jigsaw-puzzle
+
 require(data.table)
 path='/Volumes/Media/DataScience/Kaggle/Salt/all/'
 output_path = '/Volumes/Media/DataScience/Kaggle/Salt/kaggle-salt/data/mos_numpy_v2/'
