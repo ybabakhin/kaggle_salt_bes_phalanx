@@ -151,9 +151,8 @@ def generate_pseudolabels(pseudolabels, pseudolabels_path='pseudolabels'):
         os.path.join(args.data_root, pseudolabels_path + '.csv'))
 
     pseudo = df_test[(df_test.confidence >= 0.9) & (df_test.unique_pixels > 1)].sample(frac=1, random_state=123)
-    pseudo['coverage_class'] = -1
     pseudo['fold'] = -1
-    pseudo[['fold', 'unique_pixels', 'coverage_class']].to_csv(
+    pseudo[['fold', 'unique_pixels']].to_csv(
         os.path.join(args.data_root, pseudolabels_path + '_confident.csv'))
 
 
