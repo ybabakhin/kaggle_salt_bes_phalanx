@@ -227,7 +227,7 @@ def postprocessing(test):
 
 if __name__ == '__main__':
     test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
-
+    print('Generating Predictions for Stage', args.stage)
     if args.stage == 1:
         models = [
             'unet_resnext_50_lovasz_stage_1_5',
@@ -290,6 +290,7 @@ if __name__ == '__main__':
         test['rle_mask'] = pred
 
         if args.postprocessing == 1:
+            print('Applying Postrpocessing...')
             test = postprocessing(test)
 
         test[['id', 'rle_mask']].to_csv('../predictions/test_predictions.csv', index=False)

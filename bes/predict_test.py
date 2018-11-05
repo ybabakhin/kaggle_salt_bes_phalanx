@@ -13,7 +13,8 @@ def main():
     test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
-    print(args.network + args.alias)
+
+    print('Predicting Model:', args.network + args.alias)
 
     for fold in folds:
         K.clear_session()
@@ -30,7 +31,7 @@ def main():
 
         model.load_weights(weights_path)
 
-        # Save test predictions
+        # Save test predictions to disk
         dir_path = os.path.join(MODEL_PATH, args.prediction_folder.format(fold))
         os.system("mkdir {}".format(dir_path))
         predict_test(model=model,

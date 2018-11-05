@@ -18,6 +18,8 @@ def main():
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
 
+    print('Training Model:', args.network + args.alias)
+
     for fold in folds:
 
         K.clear_session()
