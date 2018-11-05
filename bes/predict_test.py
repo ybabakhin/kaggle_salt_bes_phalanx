@@ -10,7 +10,8 @@ from losses import Kaggle_IoU_Precision, make_loss
 
 
 def main():
-    test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
+    test_ids = [x[:-4] for x in os.listdir(args.test_folder) if x[-4:] == '.png']
+
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]
 
@@ -36,8 +37,7 @@ def main():
         os.system("mkdir {}".format(dir_path))
         predict_test(model=model,
                      preds_path=dir_path,
-                     oof=False,
-                     ids=test.id.values,
+                     ids=test_ids,
                      batch_size=args.batch_size * 2,
                      TTA='flip',
                      preprocess=preprocess)

@@ -11,6 +11,6 @@ def get_augmentations(augmentation, p):
         ], p=p)
 
     else:
-        ValueError("Unknown Augmentations")
+        raise ValueError("Unknown Augmentations")
 
     return augmentations

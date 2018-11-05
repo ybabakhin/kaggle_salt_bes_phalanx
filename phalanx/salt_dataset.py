@@ -160,10 +160,10 @@ def semi_trainImageFetch(pseudo_path, list_id=None):
 
 
 def testImageFetch(test_id):
-    image_test = np.zeros((18000, 101, 101), dtype=np.float32)
+    image_test = np.zeros((len(test_id), 101, 101), dtype=np.float32)
 
     for n, image_id in tqdm(enumerate(test_id), total=len(test_id)):
-        image_path = '../data/test/images/' + image_id + '.png'
+        image_path = '/test_data/' + image_id + '.png'
 
         img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255
         image_test[n] = img

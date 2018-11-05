@@ -10,7 +10,7 @@ python3 train_cv.py \
 --epoch 300 \
 --snapshot 6 \
 --cuda True \
---save_weight weights/ \
+--save_weight /workdir/phalanx/weights/ \
 --max_lr 0.012 \
 --min_lr 0.001 \
 --momentum 0.9 \
@@ -26,7 +26,7 @@ python3 precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 0 \
---save_weight weights/ \
+--save_weight /workdir/phalanx/weights/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -39,7 +39,7 @@ python3 precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 1 \
---save_weight weights/ \
+--save_weight /workdir/phalanx/weights/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -52,7 +52,7 @@ python3 precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 2 \
---save_weight weights/ \
+--save_weight /workdir/phalanx/weights/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -65,7 +65,7 @@ python3 precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 3 \
---save_weight weights/ \
+--save_weight /workdir/phalanx/weights/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -78,7 +78,7 @@ python3 precisioncv.py \
 --batch_size 18 \
 --cuda True \
 --fold 4 \
---save_weight weights/ \
+--save_weight /workdir/phalanx/weights/ \
 --start_snap 1 \
 --end_snap 5 \
 
@@ -86,4 +86,4 @@ python3 precisioncv.py \
 # stage1 model prediction
 python3 submit34.py \
 --model res34v4 \
---pred_path predictions/phalanx_stage_1.npy
+--pred_path /workdir/phalanx/predictions/phalanx_stage_1.npy

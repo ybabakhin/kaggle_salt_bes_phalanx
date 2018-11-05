@@ -19,19 +19,6 @@ class ThreadsafeIter(object):
             return next(self.it)
 
 
-def freeze_model(model, freeze_before_layer):
-    if freeze_before_layer == "ALL":
-        for l in model.layers:
-            l.trainable = False
-    else:
-        freeze_before_layer_index = -1
-        for i, l in enumerate(model.layers):
-            if l.name == freeze_before_layer:
-                freeze_before_layer_index = i
-        for l in model.layers[:freeze_before_layer_index + 1]:
-            l.trainable = False
-
-
 def do_tta(img, TTA, preprocess):
     imgs = []
 
@@ -74,12 +61,8 @@ def undo_tta(imgs, TTA):
     return part
 
 
-def read_image_test(id, TTA, oof, preprocess):
-    if oof:
-        img = cv2.imread(os.path.join(args.images_dir, '{}.png'.format(id)), cv2.IMREAD_COLOR)
-    else:
-        img = cv2.imread(os.path.join(args.test_folder, '{}.png'.format(id)), cv2.IMREAD_COLOR)
-
+def read_image_test(id, TTA, preprocess):
+    img = cv2.imread(os.path.join(args.test_folder, '{}.png'.format(id)), cv2.IMREAD_COLOR)
     imgs = do_tta(img, TTA, preprocess)
 
     return imgs
@@ -93,17 +76,17 @@ def _get_augmentations_count(TTA=''):
         return 2
 
     else:
-        'No Such TTA'
+        raise ValueError('No Such TTA')
 
 
-def predict_test(model, preds_path, oof, ids, batch_size, TTA='', preprocess=None):
+def predict_test(model, preds_path, ids, batch_size, TTA='', preprocess=None):
     num_images = ids.shape[0]
 
     for start in tqdm(range(0, num_images, batch_size)):
         end = min(start + batch_size, num_images)
 
         augment_number_per_image = _get_augmentations_count(TTA)
-        images = [read_image_test(x, TTA=TTA, oof=oof, preprocess=preprocess) for x in ids[start:end]]
+        images = [read_image_test(x, TTA=TTA, preprocess=preprocess) for x in ids[start:end]]
         images = [item for sublist in images for item in sublist]
 
         X = np.array([x for x in images])

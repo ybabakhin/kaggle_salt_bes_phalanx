@@ -225,7 +225,7 @@ def postprocessing(test):
 
 
 if __name__ == '__main__':
-    test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
+    test_ids = [x[:-4] for x in os.listdir(args.test_folder) if x[-4:] == '.png']
     print('Generating Predictions for Stage', args.stage)
     if args.stage == 1:
         models = [
@@ -236,10 +236,10 @@ if __name__ == '__main__':
         ]
 
         model_pathes = [args.models_dir + x for x in models]
-        phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_1.npy')]
+        phalanx_dicts = [read_phalanx_test('/workdir/phalanx/predictions/phalanx_stage_1.npy')]
 
         pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
-                                      test.id.values, 0.5,
+                                      test_ids, 0.5,
                                       phalanx_dicts=phalanx_dicts,
                                       weights=[1, 1, 1, 1],
                                       inner_weights=[1, 1])
@@ -255,10 +255,10 @@ if __name__ == '__main__':
         ]
 
         model_pathes = [args.models_dir + x for x in models]
-        phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_2.npy')]
+        phalanx_dicts = [read_phalanx_test('/workdir/phalanx/predictions/phalanx_stage_2.npy')]
 
         pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
-                                      test.id.values, 0.5,
+                                      test_ids, 0.5,
                                       phalanx_dicts=phalanx_dicts,
                                       weights=[1, 1, 1, 3],
                                       inner_weights=[1, 1])
@@ -274,10 +274,10 @@ if __name__ == '__main__':
         ]
 
         model_pathes = [args.models_dir + x for x in models]
-        phalanx_dicts = [read_phalanx_test('../phalanx/predictions/phalanx_stage_3.npy')]
+        phalanx_dicts = [read_phalanx_test('/workdir/phalanx/predictions/phalanx_stage_3.npy')]
 
         pred, pseudolabels = ensemble(model_pathes, [0, 1, 2, 3, 4],
-                                      test.id.values, 0.5,
+                                      test_ids, 0.5,
                                       phalanx_dicts=phalanx_dicts,
                                       weights=[1, 1, 1, 3],
                                       inner_weights=[1, 1])
@@ -285,11 +285,10 @@ if __name__ == '__main__':
         # Whether to generate test predictions?
         # generate_pseudolabels(pseudolabels, 'test_predictions')
 
-        test = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
-        test['rle_mask'] = pred
+        test = pd.DataFrame({'id': test_ids, 'rle_mask': pred})
 
         if args.postprocessing == 1:
             print('Applying Postrpocessing...')
             test = postprocessing(test)
 
-        test[['id', 'rle_mask']].to_csv('../predictions/test_predictions.csv', index=False)
+        test[['id', 'rle_mask']].to_csv(args.test_predictions_path, index=False)

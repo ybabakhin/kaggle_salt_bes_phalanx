@@ -1,4 +1,5 @@
 from tqdm import tqdm
+import os
 import argparse
 import cv2
 import numpy as np
@@ -27,6 +28,7 @@ parser.add_argument('--min_lr', default=0.001, type=float, help='min learning ra
 parser.add_argument('--fold', default='0', type=str, help='number of split fold')
 parser.add_argument('--start_snap', default=0, type=int)
 parser.add_argument('--end_snap', default=3, type=int)
+parser.add_argument('--test_folder', default='/test_data/', type=str, help='path to the folder with test images')
 
 args = parser.parse_args()
 fine_size = args.fine_size + args.pad_left + args.pad_right
@@ -35,15 +37,13 @@ args.save_pred += args.model + '_'
 
 device = torch.device('cuda' if args.cuda else 'cpu')
 
-train_id = pd.read_csv('../data/train.csv')['id'].values
-depth_id = pd.read_csv('../data/depths.csv')['id'].values
-test_id = np.setdiff1d(depth_id, train_id)
+test_id = [x[:-4] for x in os.listdir(args.test_folder) if x[-4:] == '.png']
 
 if __name__ == '__main__':
     # Load test data
     image_test = testImageFetch(test_id)
 
-    overall_pred = np.zeros((18000, args.fine_size, args.fine_size), dtype=np.float32)
+    overall_pred = np.zeros((len(test_id), args.fine_size, args.fine_size), dtype=np.float32)
 
     # Get model
     if args.model == 'res34v3':

@@ -20,7 +20,7 @@ python3 train.py \
 # Finetune with Lovasz
 python3 train.py \
 --epochs 125 \
---pretrain_weights weights/unet_resnext_50_stage_1_1/fold_{}.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_stage_1_1/fold_{}.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.00005 \
 --input_size 224 \
@@ -40,7 +40,7 @@ python3 train.py \
 python3 train.py \
 --epochs 40 \
 --n_snapshots 1 \
---pretrain_weights weights/unet_resnext_50_lovasz_stage_1_2/fold_{}.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_lovasz_stage_1_2/fold_{}.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.0001 \
 --input_size 224 \
@@ -54,7 +54,7 @@ python3 train.py \
 python3 train.py \
 --epochs 40 \
 --n_snapshots 1 \
---pretrain_weights weights/unet_resnext_50_lovasz_stage_1_3/fold_{}.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_lovasz_stage_1_3/fold_{}.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.0001 \
 --input_size 224 \
@@ -68,7 +68,7 @@ python3 train.py \
 python3 train.py \
 --epochs 40 \
 --n_snapshots 1 \
---pretrain_weights weights/unet_resnext_50_lovasz_stage_1_4/fold_{}.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_lovasz_stage_1_4/fold_{}.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.0001 \
 --input_size 224 \
@@ -82,7 +82,7 @@ python3 train.py \
 # Predict on test data #####################################
 python3 predict_test.py \
 --epochs 125 \
---pretrain_weights weights/unet_resnext_50_stage_1_1/fold_{}.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_stage_1_1/fold_{}.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.00005 \
 --input_size 224 \
@@ -102,7 +102,7 @@ python3 predict_test.py \
 python3 predict_test.py \
 --epochs 40 \
 --n_snapshots 1 \
---pretrain_weights weights/unet_resnext_50_lovasz_stage_1_2/fold_{}.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_lovasz_stage_1_2/fold_{}.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.0001 \
 --input_size 224 \
@@ -118,7 +118,7 @@ python3 predict_test.py \
 python3 predict_test.py \
 --epochs 40 \
 --n_snapshots 1 \
---pretrain_weights weights/unet_resnext_50_lovasz_stage_1_3/fold_{}.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_lovasz_stage_1_3/fold_{}.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.0001 \
 --input_size 224 \
@@ -134,7 +134,7 @@ python3 predict_test.py \
 python3 predict_test.py \
 --epochs 40 \
 --n_snapshots 1 \
---pretrain_weights weights/unet_resnext_50_lovasz_stage_1_4/fold_{}.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_lovasz_stage_1_4/fold_{}.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.0001 \
 --input_size 224 \

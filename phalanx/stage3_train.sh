@@ -15,7 +15,7 @@ python3 train_pseudo.py \
 --min_lr 0.001 \
 --momentum 0.9 \
 --weight_decay 1e-4 \
---pseudo_path ../data/pseudolabels_v2/
+--pseudo_path /workdir/data/pseudolabels_v2/
 
 # train stage3 model with train data
 python3 train_cv.py \
@@ -27,7 +27,7 @@ python3 train_cv.py \
 --epoch 200 \
 --snapshot 4 \
 --cuda True \
---save_weight weights/ \
+--save_weight /workdir/phalanx/weights/ \
 --max_lr 0.01 \
 --min_lr 0.001 \
 --momentum 0.9 \
