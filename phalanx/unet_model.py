@@ -66,7 +66,7 @@ class SpatialAttention2d(nn.Module):
     def forward(self, x):
         z = self.squeeze(x)
         z = self.sigmoid(z)
-        return z
+        return x * z
 
 
 class GAB(nn.Module):
