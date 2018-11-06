@@ -1,8 +1,10 @@
 Hello!
 
 Below you can find the instructions to reproduce the first place solution for the 'TGS Salt Identification Challenge' by team 'b.e.s. &amp; phalanx'.
+
 If you run into any trouble with the setup/code or have any questions please contact us at y.babakhin@gmail.com (b.e.s.) or ritskitamura@gmail.com (phalanx).
-To read the detailed solution, please, refer to First_Place_TGS_Salt.pdf.
+
+To read the detailed solution, please, refer to *First_Place_TGS_Salt.pdf*.
 
 ## ARCHIVE CONTENTS
 
@@ -45,7 +47,7 @@ cd docker
 
 1. very fast prediction
 
-    a) runs for about 20 minutes
+    a) takes about 20 minutes
     
     b) uses precomputed neural network predictions
     
@@ -86,6 +88,6 @@ Commands to run each build are presented below:
 
 1. Model weights are located in bes/weights and phalanx/weights for b.e.s. and phalanx models respectively
 
-2. Individual model predictions are stored in bes/predictions (.png images) and phalanx/predictions (*.npy files)
+2. Individual model predictions before ensembling are stored in bes/predictions (*.png images) and phalanx/predictions (*.npy files)
 
-3. Scripts to generate initial folds and jigsaw mosaic are located in bes/datasets: generate_folds.py and Generate_Mosaic.R
+3. Scripts to generate initial folds and jigsaw mosaics are located in bes/datasets: generate_folds.py and Generate_Mosaic.R
