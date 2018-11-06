@@ -88,7 +88,7 @@ if __name__ == '__main__':
         for images in tqdm(test_loader, total=len(test_loader)):
             images = images.to(device)
             with torch.set_grad_enabled(False):
-                if args.model == 'res34v5':
+                if args.model == 'res34v3':
                     pred, _, _ = salt(images)
                 else:
                     pred = salt(images)
