@@ -1,6 +1,6 @@
 Hello!
 
-Below you can find an outline of how to reproduce first place solution for the TGS Salt Identification competition by team 'b.e.s. &amp; phalanx'.
+Below you can find the instructions to reproduce the first place solution for the 'TGS Salt Identification Challenge' by team 'b.e.s. &amp; phalanx'.
 If you run into any trouble with the setup/code or have any questions please contact us at y.babakhin@gmail.com (b.e.s.) or ritskitamura@gmail.com (phalanx).
 
 ## ARCHIVE CONTENTS
@@ -11,13 +11,13 @@ If you run into any trouble with the setup/code or have any questions please con
 * phalanx                  : contains train and prediction code for phalanx models
 * predictions              : model predictions
 
-## HARDWARE: (The following specs were used to create the original solution)
+## HARDWARE (The following specs were used to create the original solution)
 
 * Ubuntu 16.04 LTS (256 GB boot disk)
 * 12 CPUs, 30 GB memory
 * 1 x GeForce GTX 1080 Ti
 
-## SOFTWARE:
+## SOFTWARE
 
 * Python 3.5.2
 * CUDA 9.0
@@ -28,7 +28,7 @@ If you run into any trouble with the setup/code or have any questions please con
 
 ## DATA SETUP
 
-Inital Train and Test data together with .csv files are already available in data/ directory.
+Inital Train and Test image data together with .csv files are already available in data/ directory.
 One could specify local path to the new test images in SETTINGS.json file (NEW_TEST_IMAGES_DATA field). The initial test data is used by default.
 
 ## DOCKER SETUP
@@ -40,7 +40,7 @@ cd docker
 ./run.sh
 ```
 
-## MODEL BUILD: There are three options to produce the solution.
+## MODEL BUILD (There are three options to produce the solution)
 
 1. very fast prediction
 
@@ -64,19 +64,19 @@ cd docker
     
     c) follow this with (2) to produce entire solution from scratch
 
-shell commands to run each build is below
+Commands to run each build are presented below:
 
-### 1) very fast prediction (overwrites predictions/test_prediction.csv)
+### 1. very fast prediction (overwrites predictions/test_prediction.csv)
 ```bash
 ./make_submission.sh
 ```
 
-### 2) ordinary prediction (overwrites predictions/test_prediction.csv)
+### 2. ordinary prediction (overwrites predictions/test_prediction.csv)
 ```bash
 ./predict.sh
 ```
 
-### 3) retrain models (overwrites model weights in bes/weights and phalanx/weights)
+### 3. retrain models (overwrites model weights in bes/weights and phalanx/weights)
 ```bash
 /.train.sh
 ```
