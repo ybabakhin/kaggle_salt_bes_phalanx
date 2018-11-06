@@ -34,7 +34,7 @@ python3 train.py \
 # Finetune on train
 python3 train.py \
 --epochs 125 \
---pretrain_weights /workdir/bes/weights/unet_resnext_50_stage_2_1/fold_0.hdf5 \
+--pretrain_weights /workdir/bes/weights/unet_resnext_50_lovasz_stage_2_1/fold_0.hdf5 \
 --fold 0,1,2,3,4 \
 --learning_rate 0.00005 \
 --input_size 224 \
