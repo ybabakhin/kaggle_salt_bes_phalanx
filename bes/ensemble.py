@@ -57,17 +57,12 @@ def read_phalanx_test(path):
             min_prob = mi
         if ma > max_prob:
             max_prob = ma
-
-    train_id = pd.read_csv(os.path.join(args.data_root, 'train.csv'))['id'].values
-    depth_id = pd.read_csv(os.path.join(args.data_root, 'depths.csv'))['id'].values
-    test_id = np.setdiff1d(depth_id, train_id)
-
-    phalanx_df = pd.read_csv(os.path.join(args.data_root, 'sample_submission.csv'))
-    phalanx_df['id'] = test_id
+    
+    test_id = [x[:-4] for x in os.listdir(args.test_folder) if x[-4:] == '.png']
 
     phalanx_dict = {}
-    for idx, row in phalanx_df.iterrows():
-        phalanx_dict[row['id']] = (phalanx[idx] - min_prob) / (max_prob - min_prob)
+    for idx, val in enumerate(test_id):
+        phalanx_dict[val] = (phalanx[idx] - min_prob) / (max_prob - min_prob)
 
     return phalanx_dict
 
