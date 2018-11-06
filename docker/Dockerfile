@@ -21,12 +21,3 @@ ENV PYTHONPATH $PYTHONPATH:/workdir
 ENV TORCH_HOME=/workdir/data/.torch
 
 WORKDIR /workdir
-
-# User for writing
-ARG UID=1005
-ARG GID=1005
-
-RUN groupadd -g ${GID} dev
-RUN useradd -s /bin/bash -u $UID -g $GID p
-
-USER p

@@ -88,6 +88,6 @@ Commands to run each build are presented below:
 
 1. Model weights are located in bes/weights and phalanx/weights for b.e.s. and phalanx models respectively
 
-2. Individual model predictions before ensembling are stored in bes/predictions (*.png images) and phalanx/predictions (*.npy files)
+2. Individual model predictions before ensembling are stored in bes/predictions (lots of *.png images) and phalanx/predictions (*.npy files)
 
 3. Scripts to generate initial folds and jigsaw mosaics are located in bes/datasets: generate_folds.py and Generate_Mosaic.R
