@@ -72,7 +72,10 @@ if __name__ == '__main__':
         for images in tqdm(test_loader, total=len(test_loader)):
             images = images.to(device)
             with torch.set_grad_enabled(False):
-                pred = salt(images)
+                if args.model == 'res34v5':
+                    pred, _, _ = salt(images)
+                else:
+                    pred = salt(images)
                 pred = nn.Sigmoid()(pred).squeeze(1).cpu().numpy()
             pred = pred[:, args.pad_left:args.fine_size + args.pad_left, args.pad_left:args.fine_size + args.pad_left]
             pred_null.append(pred)
@@ -85,7 +88,10 @@ if __name__ == '__main__':
         for images in tqdm(test_loader, total=len(test_loader)):
             images = images.to(device)
             with torch.set_grad_enabled(False):
-                pred = salt(images)
+                if args.model == 'res34v5':
+                    pred, _, _ = salt(images)
+                else:
+                    pred = salt(images)
                 pred = nn.Sigmoid()(pred).squeeze(1).cpu().numpy()
             pred = pred[:, args.pad_left:args.fine_size + args.pad_left, args.pad_left:args.fine_size + args.pad_left]
             for idx in range(len(pred)):
@@ -97,5 +103,12 @@ if __name__ == '__main__':
         overall_pred += (pred_null + pred_flip) / 2
 
     overall_pred /= (args.end_snap - args.start_snap + 1)
+
     # Save prediction
-    np.save(args.save_pred + 'pred' + args.fold, overall_pred)
+    if args.fine_size != 101:
+        overall_pred_101 = np.zeros((len(test_id), 101, 101), dtype=np.float32)
+        for idx in len(test_id):
+            overall_pred_101[idx] = cv2.resize(overall_pred[idx], dsize=(101, 101))
+        np.save(args.save_pred + 'pred' + args.fold, overall_pred_101)
+    else:
+        np.save(args.save_pred + 'pred' + args.fold, overall_pred)
