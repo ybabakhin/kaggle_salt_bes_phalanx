@@ -6,9 +6,6 @@ from tqdm import tqdm
 from params import args
 
 
-# Ensemble parameters:
-# List of models, list of weights, threshold, postprocessing?, save pseudolabels?, submission filename?
-
 # Source https://www.kaggle.com/bguberfain/unet-with-depth
 def RLenc(img, order='F', format=True):
     """
@@ -142,6 +139,7 @@ def generate_pseudolabels(pseudolabels, pseudolabels_path='pseudolabels'):
 
     df_test = df_test.join(pseudolabels_df)
 
+    os.system("mkdir {}".format(os.path.join(args.data_root, pseudolabels_path)))
     for idx, row in df_test.iterrows():
         cv2.imwrite(
             os.path.join(args.data_root, pseudolabels_path, str(idx) + '.png'),

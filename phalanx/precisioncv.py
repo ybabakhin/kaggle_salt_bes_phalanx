@@ -56,6 +56,7 @@ if __name__ == '__main__':
 
     # Start prediction
     for step in range(args.start_snap, args.end_snap + 1):
+        print('Predicting Snapshot', step)
         pred_null = []
         pred_flip = []
         # Load weight

@@ -139,7 +139,7 @@ def trainImageFetch(images_id):
 
 
 def semi_trainImageFetch(pseudo_path, list_id=None):
-    if list_id == None:
+    if list_id is None:
         images_id = os.listdir(pseudo_path)
     else:
         images_id = list_id

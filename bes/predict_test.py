@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import os
 import gc
 from keras import backend as K
@@ -10,7 +11,7 @@ from losses import Kaggle_IoU_Precision, make_loss
 
 
 def main():
-    test_ids = [x[:-4] for x in os.listdir(args.test_folder) if x[-4:] == '.png']
+    test_ids = np.array([x[:-4] for x in os.listdir(args.test_folder) if x[-4:] == '.png'])
 
     MODEL_PATH = os.path.join(args.models_dir, args.network + args.alias)
     folds = [int(f) for f in args.fold.split(',')]

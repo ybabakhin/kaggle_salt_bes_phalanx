@@ -24,11 +24,11 @@ parser.add_argument('--epoch', default=300, type=int, help='Number of training e
 parser.add_argument('--snapshot', default=5, type=int, help='Number of snapshots per fold')
 parser.add_argument('--cuda', default=True, type=bool, help='Use cuda to train model')
 parser.add_argument('--save_weight', default='weights/stage3/', type=str, help='weight save space')
-parser.add_argument('--max_lr', '--learning-rate', default=0.01, type=float, help='max learning rate')
-parser.add_argument('--min_lr', '--learning-rate', default=0.001, type=float, help='min learning rate')
+parser.add_argument('--max_lr', default=0.01, type=float, help='max learning rate')
+parser.add_argument('--min_lr', default=0.001, type=float, help='min learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum for SGD')
 parser.add_argument('--weight_decay', default=1e-4, type=float, help='Weight decay for SGD')
-parser.add_argument('--pseudo_path', default='../data/pseudolabels_v2/', type=float, help='pseudo labels path')
+parser.add_argument('--pseudo_path', default='/workdir/data/pseudolabels_v2/', type=str, help='pseudo labels path')
 
 args = parser.parse_args()
 image_size = args.fine_size + args.pad_left + args.pad_right
