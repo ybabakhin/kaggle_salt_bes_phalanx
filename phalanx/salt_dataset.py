@@ -148,7 +148,7 @@ def semi_trainImageFetch(pseudo_path, list_id=None):
     mask_train = np.zeros((len(images_id), 101, 101), dtype=np.float32)
 
     for idx, image_id in tqdm(enumerate(images_id)):
-        image_path = '../data/test/images/' + image_id
+        image_path = '/test_data/' + image_id
         mask_path = pseudo_path + image_id
 
         image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255
