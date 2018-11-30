@@ -54,12 +54,11 @@ def train_aug(image, mask):
 
 
 class SaltDataset(Dataset):
-    def __init__(self, image_list, mask_list=None, is_train=False, is_val=False, is_tta=False, is_semi=False,
+    def __init__(self, image_list, mode, mask_list=None, is_tta=False, is_semi=False,
                  fine_size=202, pad_left=0, pad_right=0):
         self.imagelist = image_list
+        self.mode = mode
         self.masklist = mask_list
-        self.is_train = is_train
-        self.is_val = is_val
         self.is_tta = is_tta
         self.is_semi = is_semi
         self.fine_size = fine_size
@@ -72,7 +71,7 @@ class SaltDataset(Dataset):
     def __getitem__(self, idx):
         image = deepcopy(self.imagelist[idx])
 
-        if self.is_train:
+        if self.mode == 'train':
             mask = deepcopy(self.masklist[idx])
 
             image, mask = train_aug(image, mask)
@@ -90,10 +89,9 @@ class SaltDataset(Dataset):
                                 self.fine_size + self.pad_left + self.pad_right)
             image, mask = torch.from_numpy(image), torch.from_numpy(mask)
             image = add_depth_channels(image)
-            image.requires_grad_(True)
             return image, mask, torch.from_numpy(label)
 
-        if self.is_val:
+        elif self.mode == 'val':
             mask = deepcopy(self.masklist[idx])
             if self.fine_size != image.shape[0]:
                 image, mask = do_resize2(image, mask, self.fine_size, self.fine_size)
@@ -103,23 +101,26 @@ class SaltDataset(Dataset):
             image = image.reshape(1, self.fine_size + self.pad_left + self.pad_right,
                                   self.fine_size + self.pad_left + self.pad_right)
             mask = mask.reshape(1, self.fine_size, self.fine_size)
+
             image, mask = torch.from_numpy(image), torch.from_numpy(mask)
             image = add_depth_channels(image)
-            image.requires_grad_(True)
+
             return image, mask
 
-        if self.is_tta:
-            image = cv2.flip(image, 1)
-        if self.fine_size != image.shape[0]:
-            image = cv2.resize(image, dsize=(self.fine_size, self.fine_size))
-        if self.pad_left != 0:
-            image = do_center_pad(image, self.pad_left, self.pad_right)
+        elif self.mode == 'test':
+            if self.is_tta:
+                image = cv2.flip(image, 1)
+            if self.fine_size != image.shape[0]:
+                image = cv2.resize(image, dsize=(self.fine_size, self.fine_size))
+            if self.pad_left != 0:
+                image = do_center_pad(image, self.pad_left, self.pad_right)
 
-        image = image.reshape(1, self.fine_size + self.pad_left + self.pad_right,
-                              self.fine_size + self.pad_left + self.pad_right)
-        image = torch.from_numpy(image)
-        image = add_depth_channels(image)
-        return image
+            image = image.reshape(1, self.fine_size + self.pad_left + self.pad_right,
+                                self.fine_size + self.pad_left + self.pad_right)
+            image, mask = torch.from_numpy(image)
+            image = add_depth_channels(image)
+            return image
+
 
 
 def trainImageFetch(images_id):

@@ -4,13 +4,15 @@ import numpy as np
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import RandomSampler
 
 # fastprogress available only for Python3.6+ and Tensorflow Docker image for Python < 3.6
 # from fastprogress import master_bar, progress_bar
 
 from lovasz_losses import lovasz_hinge
-from utils import do_kaggle_metric
+from utils import do_kaggle_metric, get_model
 from salt_dataset import SaltDataset, trainImageFetch, semi_trainImageFetch
 from unet_model import Res34Unetv3, Res34Unetv4, Res34Unetv5
 
@@ -55,7 +57,7 @@ def test(test_loader, model):
                       args.pad_left:args.pad_left + args.fine_size].contiguous()
             loss = lovasz_hinge(outputs.squeeze(1), masks.squeeze(1))
 
-        predicts.append(nn.Sigmoid()(outputs).detach().cpu().numpy())
+        predicts.append(F.sigmoid(outputs).detach().cpu().numpy())
         truths.append(masks.detach().cpu().numpy())
         running_loss += loss.item() * inputs.size(0)
 
@@ -70,7 +72,6 @@ def test(test_loader, model):
 # Training function
 def train(train_loader, model):
     running_loss = 0.0
-    data_size = train_data.__len__()
 
     model.train()
     # for inputs, masks, labels in progress_bar(train_loader, parent=mb):
@@ -86,7 +87,7 @@ def train(train_loader, model):
 
         running_loss += loss.item() * inputs.size(0)
         # mb.child.comment = 'loss: {}'.format(loss.item())
-    epoch_loss = running_loss / data_size
+    epoch_loss = running_loss / train_data.__len__()
     return epoch_loss
 
 
@@ -98,20 +99,25 @@ if __name__ == '__main__':
     image_val, mask_val = trainImageFetch(val_id)
     image_train, mask_train = semi_trainImageFetch(args.pseudo_path)
 
-    train_data = SaltDataset(image_train, mask_train, is_train=True, fine_size=args.fine_size, pad_left=args.pad_left,
+    train_data = SaltDataset(image_train, mode='train', mask_list=mask_train, fine_size=args.fine_size, pad_left=args.pad_left,
                              pad_right=args.pad_right)
-    val_data = SaltDataset(image_val, mask_val, is_val=True, fine_size=args.fine_size, pad_left=args.pad_left,
-                           pad_right=args.pad_right)
-    train_loader = DataLoader(train_data, shuffle=True, batch_size=args.batch_size, num_workers=0)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=0)
+    train_loader = DataLoader(
+                            train_data,
+                            shuffle=RandomSampler(train_data),
+                            batch_size=args.batch_size,
+                            num_workers=8,
+                            pin_memory=True)
 
+    val_data = SaltDataset(image_val, mode='val', mask_list=mask_val, fine_size=args.fine_size, pad_left=args.pad_left,
+                           pad_right=args.pad_right)
+    val_loader = DataLoader(
+                            val_data,
+                            shuffle=RandomSampler(val_data),
+                            batch_size=args.batch_size,
+                            num_workers=8,
+                            pin_memory=True)
     # Get model
-    if args.model == 'res34v3':
-        salt = Res34Unetv3()
-    elif args.model == 'res34v4':
-        salt = Res34Unetv4()
-    elif args.model == 'res34v5':
-        salt = Res34Unetv5()
+    salt = get_model(args.model)
     salt = salt.to(device)
 
     # Setup optimizer and scheduler

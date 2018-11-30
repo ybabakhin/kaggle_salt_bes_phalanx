@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 
 from salt_dataset import SaltDataset, testImageFetch
-from unet_model import Res34Unetv3, Res34Unetv4, Res34Unetv5
+from utils import get_model
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 parser = argparse.ArgumentParser(description='')
@@ -46,12 +47,7 @@ if __name__ == '__main__':
     overall_pred = np.zeros((len(test_id), args.fine_size, args.fine_size), dtype=np.float32)
 
     # Get model
-    if args.model == 'res34v3':
-        salt = Res34Unetv3()
-    elif args.model == 'res34v4':
-        salt = Res34Unetv4()
-    elif args.model == 'res34v5':
-        salt = Res34Unetv5()
+    salt = get_model(args.model)
     salt = salt.to(device)
 
     # Start prediction
@@ -64,8 +60,13 @@ if __name__ == '__main__':
         salt.load_state_dict(param)
 
         # Create DataLoader
-        test_data = SaltDataset(image_test, fine_size=args.fine_size, pad_left=args.pad_left, pad_right=args.pad_right)
-        test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
+        test_data = SaltDataset(image_test, mode='test', fine_size=args.fine_size, pad_left=args.pad_left, pad_right=args.pad_right)
+        test_loader = DataLoader(
+                            test_data,
+                            shuffle=False,
+                            batch_size=args.batch_size,
+                            num_workers=8,
+                            pin_memory=True)
 
         # Prediction with no TTA test data
         salt.eval()
@@ -76,14 +77,20 @@ if __name__ == '__main__':
                     pred, _, _ = salt(images)
                 else:
                     pred = salt(images)
-                pred = nn.Sigmoid()(pred).squeeze(1).cpu().numpy()
+                pred = F.sigmoid(pred).squeeze(1).cpu().numpy()
             pred = pred[:, args.pad_left:args.fine_size + args.pad_left, args.pad_left:args.fine_size + args.pad_left]
             pred_null.append(pred)
 
         # Prediction with horizontal flip TTA test data
-        test_data = SaltDataset(image_test, is_tta=True, fine_size=args.fine_size, pad_left=args.pad_left,
+        test_data = SaltDataset(image_test, mode='test', is_tta=True, fine_size=args.fine_size, pad_left=args.pad_left,
                                 pad_right=args.pad_right)
-        test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
+        test_loader = DataLoader(
+                            test_data,
+                            shuffle=False,
+                            batch_size=args.batch_size,
+                            num_workers=8,
+                            pin_memory=True)
+
         salt.eval()
         for images in tqdm(test_loader, total=len(test_loader)):
             images = images.to(device)
@@ -92,7 +99,7 @@ if __name__ == '__main__':
                     pred, _, _ = salt(images)
                 else:
                     pred = salt(images)
-                pred = nn.Sigmoid()(pred).squeeze(1).cpu().numpy()
+                pred = F.sigmoid(pred).squeeze(1).cpu().numpy()
             pred = pred[:, args.pad_left:args.fine_size + args.pad_left, args.pad_left:args.fine_size + args.pad_left]
             for idx in range(len(pred)):
                 pred[idx] = cv2.flip(pred[idx], 1)

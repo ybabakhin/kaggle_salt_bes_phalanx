@@ -1,4 +1,5 @@
 import numpy as np
+from unet_model import Res34Unetv3, Res34Unetv4, Res34Unetv5
 
 def do_kaggle_metric(predict,truth, threshold=0.5):
 
@@ -39,8 +40,19 @@ def do_kaggle_metric(predict,truth, threshold=0.5):
 
     return precision, result, threshold
 
-
-
+def get_model(model):
+    if model == 'res34v3':
+        return Res34Unetv3()
+    
+    elif model == 'res34v4':
+        return Res34Unetv4()
+    
+    elif model == 'res34v5':
+        return Res34Unetv5()
+    
+    else:
+        print('Error: ', model, ' is not defined.')
+        return
 
 def rle_decode(rle_mask):
     '''
