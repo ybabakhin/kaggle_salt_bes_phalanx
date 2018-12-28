@@ -117,7 +117,7 @@ class SaltDataset(Dataset):
 
             image = image.reshape(1, self.fine_size + self.pad_left + self.pad_right,
                                 self.fine_size + self.pad_left + self.pad_right)
-            image, mask = torch.from_numpy(image)
+            image = torch.from_numpy(image)
             image = add_depth_channels(image)
             return image
 
