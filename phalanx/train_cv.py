@@ -149,7 +149,7 @@ if __name__ == '__main__':
                             num_workers=8,
                             pin_memory=True)
         
-        val_data = SaltDataset(X_val,mode='val' ,y_val, fine_size=args.fine_size, pad_left=args.pad_left,
+        val_data = SaltDataset(X_val, mode='val', mask_list=y_val, fine_size=args.fine_size, pad_left=args.pad_left,
                                pad_right=args.pad_right)
         val_loader = DataLoader(
                             val_data,
