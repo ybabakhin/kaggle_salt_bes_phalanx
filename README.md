@@ -1,6 +1,6 @@
-## Kaggle TGS Salt Identification Challenge. b.e.s. & phalanx 1st Place Solution
+# Kaggle TGS Salt Identification Challenge. b.e.s. & phalanx 1st Place Solution
 
-To read the detailed solution, please, refer to the [Kaggle post] (https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/69291)
+To read the detailed solution, please, refer to the [Kaggle post](https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/69291)
 
 ## ENVIRONMENT
 
@@ -10,12 +10,12 @@ The solution is available as a Docker container. The following dependecies shoul
 * CUDA 9.0
 * cuddn 7
 * nvidia drivers v.384
-* Docker (https://www.docker.com/)
-* nvidia-docker (https://github.com/NVIDIA/nvidia-docker)
+* [Docker](https://www.docker.com/)
+* [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 
 ## DATA SETUP
 
-Download and unzip [competition data] (https://www.kaggle.com/c/tgs-salt-identification-challenge/data) into data/ directory.
+Download and unzip [competition data](https://www.kaggle.com/c/tgs-salt-identification-challenge/data) into data/ directory.
 One could specify local path to the new test images in SETTINGS.json file (NEW_TEST_IMAGES_DATA field). The competition test data is used by default.
 
 ## DOCKER SETUP
