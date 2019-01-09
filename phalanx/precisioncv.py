@@ -105,8 +105,8 @@ if __name__ == '__main__':
                 pred[idx] = cv2.flip(pred[idx], 1)
             pred_flip.append(pred)
 
-        pred_null = np.array(pred_null).reshape(-1, args.fine_size, args.fine_size)
-        pred_flip = np.array(pred_flip).reshape(-1, args.fine_size, args.fine_size)
+        pred_null = np.concatenate(pred_null).reshape(-1, args.fine_size, args.fine_size)
+        pred_flip = np.concatenate(pred_flip).reshape(-1, args.fine_size, args.fine_size)
         overall_pred += (pred_null + pred_flip) / 2
 
     overall_pred /= (args.end_snap - args.start_snap + 1)
