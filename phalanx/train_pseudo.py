@@ -135,7 +135,7 @@ if __name__ == '__main__':
         lr_scheduler.step()
 
         if (epoch + 1) % scheduler_step == 0:
-            optimizer = torch.optim.SGD(salt.parameters(), lr=args.lr, momentum=args.momentum,
+            optimizer = torch.optim.SGD(salt.parameters(), lr=args.max_lr, momentum=args.momentum,
                                         weight_decay=args.weight_decay)
             lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_step, args.min_lr)
             best_param = salt.state_dict()
