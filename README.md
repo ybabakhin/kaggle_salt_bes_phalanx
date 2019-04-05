@@ -15,8 +15,12 @@ The solution is available as a Docker container. The following dependecies shoul
 
 ## DATA SETUP
 
-Download and unzip [competition data](https://www.kaggle.com/c/tgs-salt-identification-challenge/data) into data/ directory.
-One could specify local path to the new test images in SETTINGS.json file (NEW_TEST_IMAGES_DATA field). The competition test data is used by default.
+Download and unzip [competition data](https://www.kaggle.com/c/tgs-salt-identification-challenge/data) into `data/` directory.
+One could specify local path to the new test images in `SETTINGS.json` file (`NEW_TEST_IMAGES_DATA` field). The competition test data is used by default.
+
+## WEIGHTS SETUP
+
+To get the weights from the final stage models download them from [google drive](https://drive.google.com/file/d/12iXDUhBTC6596MLAC2aiN-GDVqBbGBWh/view?usp=sharing) and unzip into corresponding `bes/weights/` and `phalanx/weights` directories.
 
 ## DOCKER SETUP
 
@@ -29,31 +33,29 @@ cd docker
 
 ## MODEL BUILD
 
-1. train models
+1. train models from scratch
 
-    a) expect this to run for about 16 days on a single GTX1080Ti
-    
-    b) trains all models from scratch
+    a) trains all models from scratch
+
+    b) expect this to run for about 16 days on a single GTX1080Ti
     
 2. make prediction
 
-    a) expect this to run for 3.5 hours for 18,000 test images on a single GTX1080Ti
-    
-    b) uses saved model weights
-    
+    a) uses weights from the final stage models to make predictions
+
+    b) expect this to run for 3.5 hours for 18,000 test images on a single GTX1080Ti
 
 Commands to run each build are presented below:
 
 ### 1. train models (creates model weights in bes/weights and phalanx/weights)
 ```bash
-/.train.sh
+./train.sh
 ```
 
-### 2. ordinary prediction (creates predictions/test_prediction.csv)
+### 2. make prediction (creates predictions/test_prediction.csv)
 ```bash
 ./predict.sh
 ```
-
 
 ## ADDITIONAL NOTES
 
