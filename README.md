@@ -1,6 +1,11 @@
 # Kaggle TGS Salt Identification Challenge. b.e.s. & phalanx 1st Place Solution
 
-To read the detailed solution, please, refer to the [Kaggle post](https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/69291)
+ArXiv preprint with the detailed description of the solution:   
+**Semi-Supervised Segmentation of Salt Bodies in Seismic Images using an Ensemble of Convolutional Neural Networks**  
+*Yauhen Babakhin, Artsiom Sanakoyeu, Hirotoshi Kitamura*   
+https://arxiv.org/abs/1904.04445 
+
+Kaggle post about the solution: [link](https://www.kaggle.com/c/tgs-salt-identification-challenge/discussion/69291).
 
 ## ENVIRONMENT
 
@@ -64,3 +69,15 @@ Commands to run each build are presented below:
 2. Individual model predictions before ensembling are stored in bes/predictions (lots of .png images) and phalanx/predictions (.npy files)
 
 3. Scripts to generate initial folds and jigsaw mosaics are located in bes/datasets: generate_folds.py and Generate_Mosaic.R
+
+## CITATION
+If you find this code useful, please cite the preprint:
+
+```
+@journal{tgsSaltBodiesSegmentation2019,
+  title={Semi-Supervised Segmentation of Salt Bodies in Seismic Images using an Ensemble of Convolutional Neural Networks},
+  author={ Babakhin, Yauhen, and Sanakoyeu, Artsiom, and Kitamura, Hirotoshi},
+  journal={arXiv preprint arXiv:1904.04445},
+  year={2019}
+}
+```
