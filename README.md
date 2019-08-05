@@ -1,7 +1,9 @@
 # Kaggle TGS Salt Identification Challenge. b.e.s. & phalanx 1st Place Solution
 
-ArXiv preprint with the detailed description of the solution:   
+## Paper describing the solution: 
+
 **Semi-Supervised Segmentation of Salt Bodies in Seismic Images using an Ensemble of Convolutional Neural Networks**  
+ ***German Conference on Pattern Recognition (GCPR), 2019***  
 *Yauhen Babakhin, Artsiom Sanakoyeu, Hirotoshi Kitamura*   
 https://arxiv.org/abs/1904.04445 
 
@@ -76,8 +78,8 @@ If you find this code useful, please cite the preprint:
 ```
 @journal{tgsSaltBodiesSegmentation2019,
   title={Semi-Supervised Segmentation of Salt Bodies in Seismic Images using an Ensemble of Convolutional Neural Networks},
-  author={ Babakhin, Yauhen, and Sanakoyeu, Artsiom, and Kitamura, Hirotoshi},
-  journal={arXiv preprint arXiv:1904.04445},
+  author={Babakhin, Yauhen, and Sanakoyeu, Artsiom, and Kitamura, Hirotoshi},
+  journal={German Conference on Pattern Recognition (GCPR)},
   year={2019}
 }
 ```
