@@ -1,4 +1,4 @@
-# Kaggle TGS Salt Identification Challenge. b.e.s. & phalanx 1st Place Solution
+# 1st Place Solution for Kaggle TGS Salt Identification Challenge (b.e.s. & phalan)
 
 ## Paper describing the solution: 
 
@@ -73,7 +73,7 @@ Commands to run each build are presented below:
 3. Scripts to generate initial folds and jigsaw mosaics are located in bes/datasets: generate_folds.py and Generate_Mosaic.R
 
 ## CITATION
-If you find this code useful, please cite the preprint:
+If you find this code useful, please cite our paper:
 
 ```
 @journal{tgsSaltBodiesSegmentation2019,
