@@ -1,4 +1,4 @@
-# 1st Place Solution for Kaggle TGS Salt Identification Challenge (b.e.s. & phalan)
+# 1st Place Solution for the Kaggle TGS Salt Identification Challenge (b.e.s. & phalanx)
 
 ## Paper describing the solution: 
 
